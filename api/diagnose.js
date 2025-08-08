@@ -7,3 +7,4 @@ export default async function handler(req, res) {
         diagnosis: "✅ API 测试成功，这说明后端能正常响应"
     });
 }
+
