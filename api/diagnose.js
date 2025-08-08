@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     }
 
     res.status(200).json({
-        diagnosis: "✅ API 测试成功，这说明后端能正常响应"
+        diagnosis: "✅ API 测试成功"
     });
 }
 
