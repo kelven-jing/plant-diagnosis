@@ -1,94 +1,28 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>植物诊断</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background-color: #f5fdf5;
+<script>
+document.getElementById("uploadForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const fileInput = document.getElementById("imageUpload");
+    const file = fileInput.files[0];
+    if (!file) {
+        alert("请先选择一张图片！");
+        return;
     }
-    h1 {
-      color: #2e7d32;
-    }
-    .upload-box {
-      margin-top: 30px;
-    }
-    input[type="file"] {
-      margin: 10px 0;
-    }
-    button {
-      background-color: #4caf50;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 16px;
-      color: #333;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
-      text-align: left;
-    }
-  </style>
-</head>
-<body>
-  <h1>🌱 植物诊断网站启动成功!</h1>
-  <p>接下来我们会接入 AI 模型来分析植物状况</p>
 
-  <div class="upload-box">
-    <input type="file" id="imageInput" accept="image/*" />
-    <br />
-    <button id="diagnoseBtn" disabled>开始诊断</button>
-  </div>
+    const formData = new FormData();
+    formData.append("image", file);
 
-  <div id="result"></div>
-
-  <script>
-    const imageInput = document.getElementById("imageInput");
-    const diagnoseBtn = document.getElementById("diagnoseBtn");
-    const resultDiv = document.getElementById("result");
-
-    let selectedFile = null;
-
-    // 当用户选择图片
-    imageInput.addEventListener("change", (event) => {
-      selectedFile = event.target.files[0];
-      diagnoseBtn.disabled = !selectedFile;
-    });
-
-    // 点击诊断按钮
-    diagnoseBtn.addEventListener("click", async () => {
-      if (!selectedFile) return;
-
-      resultDiv.innerHTML = "正在分析，请稍候...";
-
-      const formData = new FormData();
-      formData.append("image", selectedFile);
-
-      try {
-        const res = await fetch("/api/diagnose", {
-          method: "POST",
-          body: formData
+    try {
+        const response = await fetch("/api/diagnose", {
+            method: "POST",
+            body: formData
         });
-        const data = await res.json();
-        resultDiv.innerHTML = `<b>诊断结果：</b><br>${data.result || "分析失败"}`;
-      } catch (error) {
-        resultDiv.innerHTML = "❌ 诊断失败，请重试。";
-      }
-    });
-  </script>
-</body>
-</html>
 
+        const result = await response.json();
+        document.getElementById("result").innerText = result.diagnosis || "诊断失败";
+    } catch (error) {
+        console.error("Error:", error);
+        alert("诊断出错，请稍后再试");
+    }
+});
+</script>
