@@ -7,6 +7,7 @@ export default async function handler(req, res) {
 
   const formData = new FormData();
   formData.append("image", req.body.image);
+  const city = req.body.city; // 获取城市信息
 
   // 从环境变量读取 API Key
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -15,13 +16,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 发送请求到 Google Gemini API 或者 Coze 工作流
     const response = await fetch('https://gemini-api.example.com/diagnose', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${GEMINI_API_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ image: req.body.image })
+      body: JSON.stringify({ image: req.body.image, city: city })
     });
 
     const result = await response.json();
