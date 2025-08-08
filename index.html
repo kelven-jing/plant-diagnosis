@@ -1,36 +1,44 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>植物诊断测试</title>
 </head>
 <body>
-    <h1>上传植物图片进行诊断</h1>
-    <input type="file" id="imageInput">
-    <button onclick="diagnose()">开始诊断</button>
+    <h1>上传植物图片进行诊断（测试版）</h1>
+    <form id="uploadForm">
+        <input type="file" id="imageUpload" accept="image/*">
+        <button type="submit">开始诊断</button>
+    </form>
+    <p id="result"></p>
 
     <script>
-        async function diagnose() {
-            const fileInput = document.getElementById('imageInput');
-            if (!fileInput.files.length) {
-                alert('请先选择图片');
-                return;
-            }
+    document.getElementById("uploadForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
-            try {
-                const res = await fetch('/api/diagnose', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-                alert(data.diagnosis || data.error);
-            } catch (err) {
-                alert('诊断出错，请稍后再试');
-            }
+        const fileInput = document.getElementById("imageUpload");
+        const file = fileInput.files[0];
+        if (!file) {
+            alert("请先选择一张图片！");
+            return;
         }
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+            const response = await fetch("/api/diagnose", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+            document.getElementById("result").innerText = result.diagnosis || "诊断失败";
+        } catch (error) {
+            console.error("Error:", error);
+            alert("诊断出错，请稍后再试");
+        }
+    });
     </script>
 </body>
 </html>
