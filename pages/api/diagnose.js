@@ -18,9 +18,9 @@ export default async function handler(req, res) {
       const filePath = files.file.filepath;
       const imageBuffer = fs.readFileSync(filePath);
 
-      // 调用 HuggingFace API（替换成你要的模型）
+      // 使用 HuggingFace 免费植物病害识别模型
       const hfRes = await fetch(
-        "https://api-inference.huggingface.co/models/username/plant-disease",
+        "https://api-inference.huggingface.co/models/jacobmv/plant-disease-model",
         {
           method: "POST",
           headers: { Authorization: `Bearer ${process.env.HF_TOKEN}` },
