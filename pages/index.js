@@ -37,7 +37,7 @@ export default function Home() {
         <br />
         <input
           type="text"
-          placeholder="请输入植物所在位置（例如：阳台、客厅）"
+          placeholder="请输入植物所在城市"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
           style={{ marginTop: 10, width: 300 }}
