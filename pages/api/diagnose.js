@@ -1,9 +1,10 @@
+console.log("🚀 diagnose API v2.1 loaded");
 import formidable from "formidable";
 import fs from "fs";
 import FormData from "form-data";
 
 export const config = {
-  api: { bodyParser: false }, // 禁用 Next.js 默认的 body 解析
+  api: { bodyParser: false },
 };
 
 export default async function handler(req, res) {
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   const form = formidable({
-    uploadDir: "/tmp", // Vercel 函数可写目录
+    uploadDir: "/tmp",
     keepExtensions: true,
   });
 
@@ -25,13 +26,10 @@ export default async function handler(req, res) {
       console.log("fields:", fields);
       console.log("files:", files);
 
-      // 适配 Formidable 的不同返回结构
-      let uploadedFile;
-      if (Array.isArray(files.picture)) {
-        uploadedFile = files.picture[0];
-      } else {
-        uploadedFile = files.picture;
-      }
+      // 取第一个文件
+      let uploadedFile = Array.isArray(files.picture)
+        ? files.picture[0]
+        : files.picture;
 
       if (!uploadedFile || !uploadedFile.filepath) {
         return res.status(400).json({ error: "No file uploaded" });
@@ -39,9 +37,13 @@ export default async function handler(req, res) {
 
       const formData = new FormData();
       formData.append("picture", fs.createReadStream(uploadedFile.filepath));
-      formData.append("position", fields.position);
 
-      // 调用 Coze API
+      // 保证 position 是字符串
+      let positionValue = Array.isArray(fields.position)
+        ? fields.position[0]
+        : fields.position;
+      formData.append("position", positionValue || "");
+
       const response = await fetch(process.env.COZE_WORKFLOW_URL, {
         method: "POST",
         headers: {
