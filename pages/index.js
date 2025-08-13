@@ -1,63 +1,71 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [imageFile, setImageFile] = useState(null);
+  const [file, setFile] = useState(null);
   const [position, setPosition] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState("");
 
-  const handleDiagnose = async () => {
-    if (!imageFile || !position) {
-      alert("请上传图片并输入位置");
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleSubmit = async () => {
+    if (!file) {
+      alert("请先选择图片！");
       return;
     }
 
-    setLoading(true);
-    setResult(null);
+    const formData = new FormData();
+    formData.append("picture", file);
+    formData.append("position", position);
+
+    console.log("📤 前端发送的 FormData:");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
 
     try {
-      const formData = new FormData();
-      formData.append("picture", imageFile);
-      formData.append("position", position);
-
       const res = await fetch("/api/diagnose", {
         method: "POST",
         body: formData,
       });
 
-      const data = await res.json();
-      setResult(data);
+      const text = await res.text();
+      console.log("📩 后端返回原始文本:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error("❌ JSON 解析失败:", e);
+        setResult(`解析失败: ${text}`);
+        return;
+      }
+
+      setResult(JSON.stringify(data, null, 2));
     } catch (error) {
-      console.error("诊断出错:", error);
-      setResult({ error: "诊断失败，请稍后再试" });
-    } finally {
-      setLoading(false);
+      console.error("❌ 前端请求出错:", error);
+      setResult(`请求出错: ${error.message}`);
     }
   };
 
   return (
-    <div style={{ padding: 20, fontFamily: "Arial" }}>
+    <div style={{ fontFamily: "sans-serif", padding: 20 }}>
       <h1>🌱 AI 植物急诊室</h1>
-
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setImageFile(e.target.files[0])}
-      />
-      <br />
+      <input type="file" onChange={handleFileChange} /> <br />
       <input
         type="text"
-        placeholder="输入位置"
+        placeholder="请输入位置"
         value={position}
         onChange={(e) => setPosition(e.target.value)}
+        style={{ marginTop: 10 }}
       />
       <br />
-      <button onClick={handleDiagnose} disabled={loading}>
-        {loading ? "诊断中..." : "诊断"}
+      <button onClick={handleSubmit} style={{ marginTop: 10 }}>
+        诊断
       </button>
-
       <h2>诊断结果</h2>
-      <pre>{result ? JSON.stringify(result, null, 2) : "暂无结果"}</pre>
+      <pre>{result}</pre>
     </div>
   );
 }
