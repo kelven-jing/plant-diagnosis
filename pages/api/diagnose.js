@@ -1,4 +1,5 @@
-import formidable from "formidable";
+export default async function handler(req, res) {
+  try {import formidable from "formidable";
 import fs from "fs";
 import FormData from "form-data";
 
@@ -40,4 +41,12 @@ export default async function handler(req, res) {
       res.status(500).json({ error: error.message });
     }
   });
+} } catch (err) {
+    console.error("❌ API diagnose 出错：", err); // 在终端打印完整错误
+    res.status(500).json({ 
+      error: "Server error", 
+      message: err.message, 
+      stack: err.stack 
+    });
+  }
 }
