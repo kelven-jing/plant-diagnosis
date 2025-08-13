@@ -1,24 +1,23 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function Home() {
-  const [image, setImage] = useState(null);
-  const [position, setPosition] = useState("");
+  const [file, setFile] = useState(null);
+  const [position, setPosition] = useState('');
   const [result, setResult] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!image || !position) {
-      alert("请上传图片并填写位置");
+  const handleSubmit = async () => {
+    if (!file || !position) {
+      alert('请选择图片并输入位置');
       return;
     }
 
     const formData = new FormData();
-    formData.append("image", image);
+    formData.append("picture", file); // 直接传 File 对象
     formData.append("position", position);
 
-    const res = await fetch("/api/diagnose", {
-      method: "POST",
-      body: formData,
+    const res = await fetch('/api/diagnose', {
+      method: 'POST',
+      body: formData
     });
 
     const data = await res.json();
@@ -26,34 +25,19 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
       <h1>🌱 AI 植物急诊室</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImage(e.target.files[0])}
-        />
-        <br />
-        <input
-          type="text"
-          placeholder="请输入植物所在城市"
-          value={position}
-          onChange={(e) => setPosition(e.target.value)}
-          style={{ marginTop: 10, width: 300 }}
-        />
-        <br />
-        <button type="submit" style={{ marginTop: 10 }}>
-          诊断
-        </button>
-      </form>
+      <input type="file" onChange={e => setFile(e.target.files[0])} /><br /><br />
+      <input
+        type="text"
+        placeholder="输入位置"
+        value={position}
+        onChange={e => setPosition(e.target.value)}
+      /><br /><br />
+      <button onClick={handleSubmit}>诊断</button>
 
-      {result && (
-        <div style={{ marginTop: 20 }}>
-          <h2>诊断结果</h2>
-          <pre>{JSON.stringify(result, null, 2)}</pre>
-        </div>
-      )}
+      <h2>诊断结果</h2>
+      <pre>{result ? JSON.stringify(result, null, 2) : '等待诊断...'}</pre>
     </div>
   );
 }
