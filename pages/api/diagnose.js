@@ -1,7 +1,6 @@
-export default async function handler(req, res) {
-  try {import formidable from "formidable";
-import fs from "fs";
-import FormData from "form-data";
+const formidable = require("formidable");
+const fs = require("fs");
+const FormData = require("form-data");
 
 export const config = {
   api: { bodyParser: false },
@@ -38,15 +37,12 @@ export default async function handler(req, res) {
         solution: data.solution || "未返回方案",
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error("❌ API diagnose 出错：", error);
+      res.status(500).json({
+        error: "Server error",
+        message: error.message,
+        stack: error.stack,
+      });
     }
   });
-} } catch (err) {
-    console.error("❌ API diagnose 出错：", err); // 在终端打印完整错误
-    res.status(500).json({ 
-      error: "Server error", 
-      message: err.message, 
-      stack: err.stack 
-    });
-  }
 }
