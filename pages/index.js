@@ -6,14 +6,6 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 读取图片并转换为 Base64
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-    }
-  };
-
   const handleDiagnose = async () => {
     if (!imageFile || !position) {
       alert("请上传图片并输入位置");
@@ -24,18 +16,13 @@ export default function Home() {
     setResult(null);
 
     try {
-      // 图片转成 Base64
-      const base64Image = await toBase64(imageFile);
+      const formData = new FormData();
+      formData.append("picture", imageFile);
+      formData.append("position", position);
 
       const res = await fetch("/api/diagnose", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          image: base64Image, // base64 格式
-          position: position,
-        }),
+        body: formData,
       });
 
       const data = await res.json();
@@ -48,30 +35,23 @@ export default function Home() {
     }
   };
 
-  // 工具函数: File -> Base64
-  const toBase64 = (file) =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+    <div style={{ padding: 20, fontFamily: "Arial" }}>
       <h1>🌱 AI 植物急诊室</h1>
 
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-      <br /><br />
-
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setImageFile(e.target.files[0])}
+      />
+      <br />
       <input
         type="text"
-        placeholder="输入拍摄地点"
+        placeholder="输入位置"
         value={position}
         onChange={(e) => setPosition(e.target.value)}
       />
-      <br /><br />
-
+      <br />
       <button onClick={handleDiagnose} disabled={loading}>
         {loading ? "诊断中..." : "诊断"}
       </button>
