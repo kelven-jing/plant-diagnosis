@@ -1,46 +1,51 @@
+import formidable from 'formidable';
+import fs from 'fs';
+
+export const config = {
+  api: { bodyParser: false }
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    const { imageUrl, position } = req.body;
+  const form = formidable({ multiples: false });
 
-    if (!imageUrl || !position) {
+  form.parse(req, async (err, fields, files) => {
+    if (err) return res.status(500).json({ error: '文件解析失败' });
+
+    const pictureFile = files.picture?.filepath;
+    const position = fields.position;
+
+    if (!pictureFile || !position) {
       return res.status(400).json({ error: '缺少图片或位置信息' });
     }
 
-    const response = await fetch(
-      `https://api.coze.com/open_api/v2/workflow/run?workflow_id=${process.env.COZE_WORKFLOW_ID}`,
-      {
+    // 转成 base64
+    const imageBase64 = fs.readFileSync(pictureFile, { encoding: 'base64' });
+    const imageDataUrl = `data:image/jpeg;base64,${imageBase64}`;
+
+    try {
+      const cozeRes = await fetch(`https://api.coze.cn/v1/workflow/run`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.COZE_API_KEY}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          workflow_id: process.env.COZE_WORKFLOW_ID,
           parameters: {
-            picture: imageUrl, // 必须和 Coze 中字段名一致
-            position: position // 必须和 Coze 中字段名一致
+            picture: imageDataUrl,
+            position
           }
         })
-      }
-    );
+      });
 
-    // 尝试解析 Coze 响应
-    const data = await response.json().catch(async () => {
-      const text = await response.text();
-      return { error: '非 JSON 响应', raw: text };
-    });
-
-    if (!response.ok) {
-      return res.status(response.status).json({ error: 'Coze API 错误', details: data });
+      const result = await cozeRes.json();
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-
-    res.status(200).json(data);
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: '服务器内部错误', details: error.message });
-  }
+  });
 }
