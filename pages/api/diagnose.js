@@ -1,85 +1,49 @@
-export const config = { api: { bodyParser: false } };
-
 import formidable from "formidable";
 import fs from "fs";
 import FormData from "form-data";
 
+export const config = {
+  api: {
+    bodyParser: false, // formidable 要禁用默认解析
+  },
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "只支持 POST 请求" });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const form = formidable({ multiples: false });
+  try {
+    // 1. 解析表单（获取图片和城市）
+    const form = formidable();
+    const [fields, files] = await form.parse(req);
 
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: "解析表单失败" });
-    }
+    const city = fields.city[0];
+    const imageFile = files.image[0];
 
-    const position = fields.city;
-    const imageFile = files.image;
+    // 2. 上传到扣子 API
+    const formData = new FormData();
+    formData.append("picture", fs.createReadStream(imageFile.filepath));
+    formData.append("position", city);
 
-    if (!position || !imageFile) {
-      return res.status(400).json({ error: "缺少图片或城市" });
-    }
+    const response = await fetch(process.env.COZE_WORKFLOW_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.COZE_API_KEY}`, // 你的扣子 Token
+      },
+      body: formData,
+    });
 
-    try {
-      // 1. 上传图片到扣子
-      const uploadForm = new FormData();
-      uploadForm.append("file", fs.createReadStream(imageFile.filepath), imageFile.originalFilename);
+    const data = await response.json();
 
-      const uploadRes = await fetch("https://api.coze.cn/v1/files/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.COZE_PAT}` },
-        body: uploadForm,
-      });
+    // 3. 返回给前端
+    return res.status(200).json({
+      sentence: data.sentence,
+      solution: data.solution,
+    });
 
-      const uploadJson = await uploadRes.json();
-      const fileId = uploadJson?.data?.id || uploadJson?.data?.file_id;
-      if (!uploadRes.ok || !fileId) {
-        return res.status(500).json({ error: "图片上传失败", detail: uploadJson });
-      }
-
-      // 2. 调用工作流
-      const payload = {
-        workflow_id: process.env.COZE_WORKFLOW_ID,
-        parameters: {
-          picture: JSON.stringify({ file_id: fileId }), // Image 类型必须这样传
-          position, // 城市
-        },
-      };
-      if (process.env.COZE_BOT_ID) payload.bot_id = process.env.COZE_BOT_ID;
-
-      const runRes = await fetch("https://api.coze.cn/v1/workflow/run", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.COZE_PAT}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const runJson = await runRes.json();
-      if (!runRes.ok || runJson?.code !== 0) {
-        return res.status(500).json({ error: "工作流调用失败", detail: runJson });
-      }
-
-      // 3. 提取输出
-      let sentence = "";
-      let solution = "";
-      try {
-        const parsed = typeof runJson.data === "string" ? JSON.parse(runJson.data) : runJson.data;
-        sentence = parsed?.sentence || "";
-        solution = parsed?.solution || "";
-      } catch {
-        console.warn("输出不是标准 JSON", runJson.data);
-      }
-
-      res.status(200).json({ sentence, solution });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "服务器错误" });
-    }
-  });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
 }
