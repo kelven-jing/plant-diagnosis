@@ -1,19 +1,20 @@
 import { useState } from "react";
 
 export default function Home() {
+  const [image, setImage] = useState(null);
   const [position, setPosition] = useState("");
-  const [picture, setPicture] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setResult(null);
+    if (!image || !position) {
+      alert("请上传图片并填写位置");
+      return;
+    }
 
     const formData = new FormData();
+    formData.append("image", image);
     formData.append("position", position);
-    formData.append("picture", picture);
 
     const res = await fetch("/api/diagnose", {
       method: "POST",
@@ -22,37 +23,35 @@ export default function Home() {
 
     const data = await res.json();
     setResult(data);
-    setLoading(false);
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-      <h1>🌱 植物急症室</h1>
+    <div style={{ padding: 20 }}>
+      <h1>🌱 AI 植物急诊室</h1>
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="请输入城市"
-          value={position}
-          onChange={(e) => setPosition(e.target.value)}
-          required
-        />
-        <br /><br />
         <input
           type="file"
           accept="image/*"
-          onChange={(e) => setPicture(e.target.files[0])}
-          required
+          onChange={(e) => setImage(e.target.files[0])}
         />
-        <br /><br />
-        <button type="submit">提交诊断</button>
+        <br />
+        <input
+          type="text"
+          placeholder="请输入植物所在位置（例如：阳台、客厅）"
+          value={position}
+          onChange={(e) => setPosition(e.target.value)}
+          style={{ marginTop: 10, width: 300 }}
+        />
+        <br />
+        <button type="submit" style={{ marginTop: 10 }}>
+          诊断
+        </button>
       </form>
 
-      {loading && <p>诊断中，请稍候...</p>}
-
       {result && (
-        <div style={{ marginTop: "20px" }}>
-          <p><strong>诊断结果：</strong>{result.sentence}</p>
-          <p><strong>解决方案：</strong>{result.solution}</p>
+        <div style={{ marginTop: 20 }}>
+          <h2>诊断结果</h2>
+          <pre>{JSON.stringify(result, null, 2)}</pre>
         </div>
       )}
     </div>
