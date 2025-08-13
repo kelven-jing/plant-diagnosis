@@ -1,4 +1,4 @@
-import formidable from "formidable";
+import { IncomingForm } from "formidable";
 import fs from "fs";
 import FormData from "form-data";
 
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const form = new formidable.IncomingForm({ uploadDir: "/tmp", keepExtensions: true });
+    const form = new IncomingForm({ uploadDir: "/tmp", keepExtensions: true });
     const [fields, files] = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
         if (err) reject(err);
@@ -36,8 +36,6 @@ export default async function handler(req, res) {
     const formData = new FormData();
     formData.append("workflow_id", process.env.COZE_WORKFLOW_ID);
     formData.append("space_id", process.env.COZE_SPACE_ID);
-
-    // Coze 要求参数名必须和 Workflow 输入变量一致
     formData.append("picture", fs.createReadStream(imageFilePath)); // 对应 picture
     formData.append("position", fields.position[0]); // 对应 position
 
