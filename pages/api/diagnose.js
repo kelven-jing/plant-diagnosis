@@ -1,9 +1,8 @@
-export const config = {
-  api: { bodyParser: false }, // 关闭默认解析，方便接收 FormData
-};
+export const config = { api: { bodyParser: false } };
 
 import formidable from "formidable";
 import fs from "fs";
+import FormData from "form-data";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -18,7 +17,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "解析表单失败" });
     }
 
-    const position = fields.city; // 对应扣子里的 position
+    const position = fields.city;
     const imageFile = files.image;
 
     if (!position || !imageFile) {
@@ -26,15 +25,13 @@ export default async function handler(req, res) {
     }
 
     try {
-      // 1) 上传图片到扣子，得到 file_id
+      // 1. 上传图片到扣子
       const uploadForm = new FormData();
       uploadForm.append("file", fs.createReadStream(imageFile.filepath), imageFile.originalFilename);
 
       const uploadRes = await fetch("https://api.coze.cn/v1/files/upload", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.COZE_PAT}`,
-        },
+        headers: { Authorization: `Bearer ${process.env.COZE_PAT}` },
         body: uploadForm,
       });
 
@@ -44,17 +41,15 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "图片上传失败", detail: uploadJson });
       }
 
-      // 2) 调用工作流
+      // 2. 调用工作流
       const payload = {
         workflow_id: process.env.COZE_WORKFLOW_ID,
         parameters: {
-          picture: JSON.stringify({ file_id: fileId }), // 扣子 Image 类型要 JSON 格式传
+          picture: JSON.stringify({ file_id: fileId }), // Image 类型必须这样传
           position, // 城市
         },
       };
-      if (process.env.COZE_BOT_ID) {
-        payload.bot_id = process.env.COZE_BOT_ID;
-      }
+      if (process.env.COZE_BOT_ID) payload.bot_id = process.env.COZE_BOT_ID;
 
       const runRes = await fetch("https://api.coze.cn/v1/workflow/run", {
         method: "POST",
@@ -70,7 +65,18 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "工作流调用失败", detail: runJson });
       }
 
-      res.status(200).json({ data: runJson.data });
+      // 3. 提取输出
+      let sentence = "";
+      let solution = "";
+      try {
+        const parsed = typeof runJson.data === "string" ? JSON.parse(runJson.data) : runJson.data;
+        sentence = parsed?.sentence || "";
+        solution = parsed?.solution || "";
+      } catch {
+        console.warn("输出不是标准 JSON", runJson.data);
+      }
+
+      res.status(200).json({ sentence, solution });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "服务器错误" });
