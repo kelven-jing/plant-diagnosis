@@ -1,3 +1,13 @@
+export default function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  res.status(200).json({
+    sentence: "测试成功",
+    solution: "API 正常工作"
+  });
+}
 import formidable from "formidable";
 import fs from "fs";
 import FormData from "form-data";
@@ -11,13 +21,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const form = formidable();
+  const form = formidable({
+    uploadDir: "/tmp", // 关键：Vercel 无服务器函数的可写目录
+    keepExtensions: true
+  });
+
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      return res.status(500).json({ error: "Form parse error" });
+      return res.status(500).json({ error: "Form parse error", details: err.message });
     }
 
     try {
+      console.log("fields:", fields);
+      console.log("files:", files);
+      console.log("COZE_WORKFLOW_URL:", process.env.COZE_WORKFLOW_URL);
+      console.log("COZE_API_KEY:", process.env.COZE_API_KEY ? "已设置" : "未设置");
+
       const formData = new FormData();
       formData.append("picture", fs.createReadStream(files.picture.filepath));
       formData.append("position", fields.position);
