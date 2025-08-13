@@ -1,8 +1,3 @@
-console.log("调试环境变量：", {
-  COZE_API_KEY: process.env.COZE_API_KEY ? "已设置" : "未设置",
-  COZE_WORKFLOW_ID: process.env.COZE_WORKFLOW_ID,
-  COZE_SPACE_ID: process.env.COZE_SPACE_ID,
-});
 import formidable from "formidable";
 import fs from "fs";
 import FormData from "form-data";
@@ -18,53 +13,46 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // 读取环境变量
-  const COZE_API_KEY = process.env.COZE_API_KEY;
-  const COZE_WORKFLOW_ID = process.env.COZE_WORKFLOW_ID;
-  const COZE_SPACE_ID = process.env.COZE_SPACE_ID;
-
-  if (!COZE_API_KEY || !COZE_WORKFLOW_ID || !COZE_SPACE_ID) {
-    return res.status(500).json({ error: "Missing Coze environment variables" });
-  }
-
-  const form = formidable({ multiples: false });
-
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error("❌ 表单解析错误：", err);
-      return res.status(500).json({ error: "Form parsing error" });
-    }
-
-    try {
-      const location = fields.location ? fields.location[0] : "";
-      const imageFile = files.image ? files.image[0] : null;
-
-      if (!imageFile) {
-        return res.status(400).json({ error: "No image uploaded" });
-      }
-
-      // 组装表单数据
-      const formData = new FormData();
-      formData.append("parameters", JSON.stringify({ location }));
-      formData.append("file", fs.createReadStream(imageFile.filepath));
-
-      const workflowUrl = `https://api.coze.cn/v1/workflow/run?workflow_id=${COZE_WORKFLOW_ID}&space_id=${COZE_SPACE_ID}`;
-
-      const cozeRes = await fetch(workflowUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${COZE_API_KEY}`,
-        },
-        body: formData,
+  try {
+    const form = new formidable.IncomingForm({ uploadDir: "/tmp", keepExtensions: true });
+    const [fields, files] = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        else resolve([fields, files]);
       });
+    });
 
-      const data = await cozeRes.json();
-      console.log("✅ Coze API response:", data);
-
-      res.status(200).json(data);
-    } catch (error) {
-      console.error("❌ API diagnose 出错：", error);
-      res.status(500).json({ error: error.message });
+    if (!files.image) {
+      return res.status(400).json({ error: "No image uploaded" });
     }
-  });
+
+    if (!fields.position || !fields.position[0]) {
+      return res.status(400).json({ error: "Position is required" });
+    }
+
+    const imageFilePath = files.image.filepath || files.image[0]?.filepath;
+
+    // 构建 Coze API 请求
+    const formData = new FormData();
+    formData.append("workflow_id", process.env.COZE_WORKFLOW_ID);
+    formData.append("space_id", process.env.COZE_SPACE_ID);
+
+    // Coze 要求参数名必须和 Workflow 输入变量一致
+    formData.append("picture", fs.createReadStream(imageFilePath)); // 对应 picture
+    formData.append("position", fields.position[0]); // 对应 position
+
+    const cozeResponse = await fetch("https://api.coze.com/open_api/v2/workflow/execute", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.COZE_API_KEY}`,
+      },
+      body: formData,
+    });
+
+    const data = await cozeResponse.json();
+    res.status(200).json(data);
+  } catch (err) {
+    console.error("Diagnose API error:", err);
+    res.status(500).json({ error: err.message });
+  }
 }
