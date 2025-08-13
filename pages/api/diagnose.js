@@ -1,19 +1,9 @@
-export default function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  res.status(200).json({
-    sentence: "测试成功",
-    solution: "API 正常工作"
-  });
-}
 import formidable from "formidable";
 import fs from "fs";
 import FormData from "form-data";
 
 export const config = {
-  api: { bodyParser: false },
+  api: { bodyParser: false }, // 禁用 Next.js 默认的 body 解析
 };
 
 export default async function handler(req, res) {
@@ -22,8 +12,8 @@ export default async function handler(req, res) {
   }
 
   const form = formidable({
-    uploadDir: "/tmp", // 关键：Vercel 无服务器函数的可写目录
-    keepExtensions: true
+    uploadDir: "/tmp", // Vercel 函数可写目录
+    keepExtensions: true,
   });
 
   form.parse(req, async (err, fields, files) => {
@@ -34,13 +24,24 @@ export default async function handler(req, res) {
     try {
       console.log("fields:", fields);
       console.log("files:", files);
-      console.log("COZE_WORKFLOW_URL:", process.env.COZE_WORKFLOW_URL);
-      console.log("COZE_API_KEY:", process.env.COZE_API_KEY ? "已设置" : "未设置");
+
+      // 适配 Formidable 的不同返回结构
+      let uploadedFile;
+      if (Array.isArray(files.picture)) {
+        uploadedFile = files.picture[0];
+      } else {
+        uploadedFile = files.picture;
+      }
+
+      if (!uploadedFile || !uploadedFile.filepath) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
 
       const formData = new FormData();
-      formData.append("picture", fs.createReadStream(files.picture.filepath));
+      formData.append("picture", fs.createReadStream(uploadedFile.filepath));
       formData.append("position", fields.position);
 
+      // 调用 Coze API
       const response = await fetch(process.env.COZE_WORKFLOW_URL, {
         method: "POST",
         headers: {
@@ -60,7 +61,6 @@ export default async function handler(req, res) {
       res.status(500).json({
         error: "Server error",
         message: error.message,
-        stack: error.stack,
       });
     }
   });
