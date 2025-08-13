@@ -1,3 +1,8 @@
+console.log("调试环境变量：", {
+  COZE_API_KEY: process.env.COZE_API_KEY ? "已设置" : "未设置",
+  COZE_WORKFLOW_ID: process.env.COZE_WORKFLOW_ID,
+  COZE_SPACE_ID: process.env.COZE_SPACE_ID,
+});
 import formidable from "formidable";
 import fs from "fs";
 import FormData from "form-data";
