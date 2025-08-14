@@ -1,4 +1,3 @@
-// API 路由：接收前端的图片，调用 Coze 工作流
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -6,7 +5,6 @@ export default async function handler(req, res) {
 
   try {
     const { imageBase64 } = req.body;
-
     if (!imageBase64) {
       return res.status(400).json({ error: 'No image uploaded' });
     }
@@ -19,8 +17,11 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${process.env.COZE_API_KEY}`
       },
       body: JSON.stringify({
-        workflow_id: process.env.COZE_WORKFLOW_ID,
-        parameters: { image: imageBase64 }
+        space_id: process.env.COZE_SPACE_ID, // ✅ 必须加
+        workflow_id: process.env.COZE_WORKFLOW_ID, // ✅ 必须加
+        parameters: {
+          image: imageBase64
+        }
       })
     });
 
