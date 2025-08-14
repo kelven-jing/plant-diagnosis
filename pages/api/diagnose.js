@@ -1,59 +1,48 @@
-import formidable from 'formidable';
-import fs from 'fs';
-import fetch from 'node-fetch';
+// pages/api/diagnose.js
 
 export const config = {
   api: {
-    bodyParser: false, // 重要: 禁用默认 body 解析
+    bodyParser: false, // 用于处理图片上传
   },
 };
 
+import formidable from "formidable";
+import fs from "fs";
+import path from "path";
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const form = formidable({ multiples: false });
+  try {
+    // 解析表单数据（包含图片和文字）
+    const form = formidable({ multiples: false });
+    const data = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        resolve({ fields, files });
+      });
+    });
 
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error('Form parse error:', err);
-      return res.status(500).json({ error: '解析表单失败' });
-    }
-
-    const position = fields.position;
-    const imageFile = files.image;
+    const { position } = data.fields;
+    const imageFile = data.files.image;
 
     if (!imageFile) {
-      return res.status(400).json({ error: 'No image uploaded' });
+      return res.status(400).json({ error: "No image uploaded" });
     }
 
-    try {
-      const imageData = fs.readFileSync(imageFile.filepath);
-      const base64Image = `data:${imageFile.mimetype};base64,${imageData.toString('base64')}`;
-
-      const response = await fetch('https://api.coze.cn/open_api/v2/workflow/execute', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.COZE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          workflow_id: process.env.COZE_WORKFLOW_ID,
-          space_id: process.env.COZE_SPACE_ID,
-          execute_mode: 2,
-          parameters: {
-            picture: base64Image,
-            position: position
-          },
-        }),
-      });
-
-      const data = await response.json();
-      return res.status(200).json(data);
-    } catch (error) {
-      console.error('Coze API 调用失败:', error);
-      return res.status(500).json({ error: '调用 Coze API 失败' });
+    if (!position || position.trim() === "") {
+      return res.status(400).json({ error: "No position provided" });
     }
-  });
-}
+
+    // 读取图片文件
+    const imageBuffer = fs.readFileSync(imageFile.filepath);
+    const base64Image = imageBuffer.toString("base64");
+
+    // 发送请求到 Coze API
+    const COZE_API_URL = "https://api.coze.cn/open_api/v2/workflow/execute";
+    const response = await fetch(COZE_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${pr
