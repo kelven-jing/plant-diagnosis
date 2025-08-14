@@ -1,41 +1,26 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function Home() {
   const [image, setImage] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleUpload = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-    setImage(URL.createObjectURL(file));
-
-    // 上传到图床（Vercel 不保存本地文件）
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "ml_default");
-
-    const uploadRes = await fetch("https://api.cloudinary.com/v1_1/demo/image/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const uploadData = await uploadRes.json();
-    return uploadData.secure_url;
+    const reader = new FileReader();
+    reader.onloadend = () => setImage(reader.result);
+    if (file) reader.readAsDataURL(file);
   };
 
-  const handleDiagnose = async () => {
+  const handleSubmit = async () => {
+    if (!image) return alert('请先选择图片');
     setLoading(true);
     setResult(null);
 
-    const imageUrl = await handleUpload({
-      target: { files: [document.getElementById("fileInput").files[0]] }
-    });
-
-    const res = await fetch("/api/diagnose", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl }),
+    const res = await fetch('/api/diagnose', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: image })
     });
 
     const data = await res.json();
@@ -44,15 +29,21 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1 style={{ color: "green" }}>🌱 AI 植物急诊室（新版）</h1>
-      <input id="fileInput" type="file" accept="image/*" />
-      <button onClick={handleDiagnose} style={{ marginLeft: "10px" }}>开始诊断</button>
-
-      {loading && <p>诊断中，请稍候...</p>}
-      {image && <img src={image} alt="preview" style={{ width: "300px", marginTop: "10px" }} />}
+    <div style={{ textAlign: 'center', padding: '40px', fontFamily: 'sans-serif' }}>
+      <h1>🌿 AI植物急诊室</h1>
+      <input type="file" accept="image/*" onChange={handleFileChange} />
+      {image && <img src={image} alt="preview" style={{ maxWidth: '300px', marginTop: '20px' }} />}
+      <div>
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          style={{ marginTop: '20px', padding: '10px 20px' }}
+        >
+          {loading ? '分析中...' : '开始诊断'}
+        </button>
+      </div>
       {result && (
-        <pre style={{ background: "#f0f0f0", padding: "10px" }}>
+        <pre style={{ textAlign: 'left', marginTop: '20px', whiteSpace: 'pre-wrap' }}>
           {JSON.stringify(result, null, 2)}
         </pre>
       )}
