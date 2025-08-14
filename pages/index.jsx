@@ -1,50 +1,61 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+import { useState } from "react";
 
-  try {
-    const { imageUrl } = req.body;
+export default function Home() {
+  const [image, setImage] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-    if (!imageUrl) {
-      return res.status(400).json({ error: "No image URL provided" });
-    }
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImage(URL.createObjectURL(file));
 
-    // 从环境变量读取配置
-    const apiKey = process.env.COZE_API_KEY;
-    const workflowId = process.env.COZE_WORKFLOW_ID;
-    const spaceId = process.env.COZE_SPACE_ID;
+    // 上传到图床（Vercel 不保存本地文件）
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "ml_default");
 
-    if (!apiKey || !workflowId || !spaceId) {
-      return res.status(500).json({ error: "Missing environment variables" });
-    }
-
-    // 直接用 Next.js 自带 fetch（避免 node-fetch ESM 报错）
-    const response = await fetch("https://api.coze.com/open_api/v2/workflow/run", {
+    const uploadRes = await fetch("https://api.cloudinary.com/v1_1/demo/image/upload", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        workflow_id: workflowId,
-        space_id: spaceId,
-        parameters: {
-          image_url: imageUrl,
-        },
-      }),
+      body: formData,
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return res.status(response.status).json({ error: errText });
-    }
+    const uploadData = await uploadRes.json();
+    return uploadData.secure_url;
+  };
 
-    const data = await response.json();
-    return res.status(200).json(data);
+  const handleDiagnose = async () => {
+    setLoading(true);
+    setResult(null);
 
-  } catch (error) {
-    console.error("Diagnosis error:", error);
-    return res.status(500).json({ error: "Server Error" });
-  }
+    const imageUrl = await handleUpload({
+      target: { files: [document.getElementById("fileInput").files[0]] }
+    });
+
+    const res = await fetch("/api/diagnose", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageUrl }),
+    });
+
+    const data = await res.json();
+    setResult(data);
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+      <h1 style={{ color: "green" }}>🌱 AI 植物急诊室（新版）</h1>
+      <input id="fileInput" type="file" accept="image/*" />
+      <button onClick={handleDiagnose} style={{ marginLeft: "10px" }}>开始诊断</button>
+
+      {loading && <p>诊断中，请稍候...</p>}
+      {image && <img src={image} alt="preview" style={{ width: "300px", marginTop: "10px" }} />}
+      {result && (
+        <pre style={{ background: "#f0f0f0", padding: "10px" }}>
+          {JSON.stringify(result, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
 }
