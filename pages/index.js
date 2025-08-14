@@ -1,62 +1,53 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [file, setFile] = useState(null);
   const [position, setPosition] = useState("");
+  const [image, setImage] = useState(null);
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return alert("请先选择图片");
+    if (!image) return alert("请上传图片");
 
     const formData = new FormData();
-    formData.append("picture", file);
     formData.append("position", position);
+    formData.append("image", image); // 注意：必须和后端 `files.image` 对应
 
-    setLoading(true);
-    setResult(null);
+    const res = await fetch("/api/diagnose", {
+      method: "POST",
+      body: formData,
+    });
 
-    try {
-      const res = await fetch("/api/diagnose", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      setResult(data);
-    } catch (err) {
-      console.error(err);
-      setResult({ error: "诊断失败，请稍后重试" });
-    } finally {
-      setLoading(false);
-    }
+    const data = await res.json();
+    setResult(data);
   };
 
   return (
-    <div style={{ fontFamily: "sans-serif", padding: "20px" }}>
-      <h1>🌱 AI 植物急诊室</h1>
+    <div style={{ padding: 20, fontFamily: "sans-serif" }}>
+      <h1>AI 植物急诊室</h1>
       <form onSubmit={handleSubmit}>
         <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
-        <br />
-        <input
           type="text"
-          placeholder="请输入地点"
+          placeholder="输入位置"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
         />
         <br />
-        <button type="submit" disabled={loading}>
-          {loading ? "诊断中..." : "诊断"}
-        </button>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setImage(e.target.files[0])}
+        />
+        <br />
+        <button type="submit">提交诊断</button>
       </form>
 
-      <h2>诊断结果</h2>
-      <pre>{result ? JSON.stringify(result, null, 2) : "无结果"}</pre>
+      {result && (
+        <div style={{ marginTop: 20 }}>
+          <h2>诊断结果</h2>
+          <pre>{JSON.stringify(result, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 }
