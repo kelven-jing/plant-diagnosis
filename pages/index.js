@@ -1,48 +1,14 @@
-// pages/index.js
-import { useState } from "react";
-
 export default function Home() {
-  const [position, setPosition] = useState("");
-  const [file, setFile] = useState(null);
-  const [result, setResult] = useState(null);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("position", position);
-    formData.append("file", file);
-
-    const res = await fetch("/api/diagnose", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await res.json();
-    setResult(data);
-  };
-
   return (
-    <div style={{ fontFamily: "sans-serif", padding: "20px" }}>
-      <h1 style={{ color: "green" }}>AI 植物急诊室 (v2.0 ✅)</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="输入位置"
-          value={position}
-          onChange={(e) => setPosition(e.target.value)}
-          required
-        />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files[0])}
-          required
-        />
-        <button type="submit">诊断</button>
-      </form>
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+      <h1>🌱 AI植物急诊室 <span style={{ fontSize: "14px", color: "#888" }}>v2.1</span></h1>
+      <p>上传你的植物照片，AI 将诊断它的健康状况。</p>
 
-      <h2>诊断结果</h2>
-      <pre>{JSON.stringify(result, null, 2)}</pre>
+      <form method="POST" action="/api/diagnose" encType="multipart/form-data">
+        <input type="file" name="picture" accept="image/*" required />
+        <input type="text" name="position" placeholder="拍摄位置（城市名）" required />
+        <button type="submit">上传并诊断</button>
+      </form>
     </div>
   );
 }
