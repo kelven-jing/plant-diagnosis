@@ -1,7 +1,6 @@
 // pages/api/diagnose.js
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
-import path from 'path';
 import fetch from 'node-fetch';
 
 export const config = {
@@ -17,23 +16,25 @@ export default async function handler(req, res) {
 
   try {
     const form = new IncomingForm({ multiples: false });
+
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error('Form parse error:', err);
-        return res.status(500).json({ error: 'File upload failed' });
+        console.error('❌ 表单解析失败:', err);
+        return res.status(500).json({ error: '文件上传失败' });
       }
 
-      // 这里确保 name="picture"
+      // 确保 name="picture"
       const file = files.picture?.[0] || files.picture;
       if (!file) {
         return res.status(400).json({ error: 'No image uploaded' });
       }
 
+      // 转 base64
       const imageData = fs.readFileSync(file.filepath);
       const base64Image = `data:${file.mimetype};base64,${imageData.toString('base64')}`;
 
-      // 调用 Coze 工作流 API
-      const cozeRes = await fetch(`https://api.coze.cn/v1/workflow/run`, {
+      // 调用 Coze API
+      const cozeRes = await fetch('https://api.coze.cn/v1/workflow/run', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.COZE_API_KEY}`,
@@ -44,7 +45,7 @@ export default async function handler(req, res) {
           space_id: process.env.COZE_SPACE_ID,
           parameters: {
             picture: base64Image,
-            position: fields.position || 'default',
+            position: fields.position || '未填写',
           },
         }),
       });
@@ -53,7 +54,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     });
   } catch (error) {
-    console.error('API error:', error);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('❌ API 错误:', error);
+    return res.status(500).json({ error: '服务器内部错误' });
   }
 }
