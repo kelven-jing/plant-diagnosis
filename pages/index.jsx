@@ -1,93 +1,77 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 export default function Home() {
-  const [city, setCity] = useState('');
-  const [file, setFile] = useState(null);
-  const [result, setResult] = useState('');
+  const [position, setPosition] = useState("");
+  const [image, setImage] = useState(null);
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!file) {
-      alert('请上传图片');
-      return;
-    }
-    if (!city.trim()) {
-      alert('请输入城市名称');
+    if (!position || !image) {
+      alert("请填写城市名并上传图片！");
       return;
     }
 
     setLoading(true);
-    setResult('');
+    setResult(null);
 
     const formData = new FormData();
-    formData.append('image', file);
-    formData.append('position', city);
+    formData.append("position", position);
+    formData.append("image", image);
 
     try {
-      const res = await fetch('/api/diagnose', {
-        method: 'POST',
+      const res = await fetch("/api/diagnose", {
+        method: "POST",
         body: formData,
       });
       const data = await res.json();
-      setResult(JSON.stringify(data, null, 2));
+      setResult(data);
     } catch (err) {
-      setResult('请求失败: ' + err.message);
+      console.error(err);
+      alert("请求出错");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <h1 style={{ color: 'green' }}>🌱 AI 植物急诊室 v3.0</h1>
+    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
+      <h1>🌿 AI 植物急诊室</h1>
       <form onSubmit={handleSubmit}>
         <div>
-          <label>城市名（手动输入）:</label><br />
+          <label>城市名：</label>
           <input
             type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="例如：宁波"
-            style={{ padding: '0.5rem', marginBottom: '1rem', width: '200px' }}
+            value={position}
+            onChange={(e) => setPosition(e.target.value)}
+            placeholder="例如：北京"
+            style={{ padding: "8px", marginBottom: "10px", width: "200px" }}
           />
         </div>
-
         <div>
-          <label>上传植物照片:</label><br />
+          <label>上传植物图片：</label>
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setFile(e.target.files[0])}
-            style={{ marginBottom: '1rem' }}
+            onChange={(e) => setImage(e.target.files[0])}
           />
         </div>
-
         <button
           type="submit"
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: 'green',
-            color: 'white',
-            border: 'none',
-            cursor: 'pointer'
-          }}
+          style={{ marginTop: "10px", padding: "8px 15px", background: "green", color: "white" }}
+          disabled={loading}
         >
-          {loading ? '诊断中...' : '提交诊断'}
+          {loading ? "诊断中..." : "提交"}
         </button>
       </form>
 
       {result && (
-        <pre style={{
-          background: '#f4f4f4',
-          padding: '1rem',
-          marginTop: '1rem',
-          borderRadius: '5px',
-          whiteSpace: 'pre-wrap'
-        }}>
-          {result}
-        </pre>
+        <div style={{ marginTop: "20px" }}>
+          <h3>诊断结果：</h3>
+          <pre>{JSON.stringify(result, null, 2)}</pre>
+        </div>
       )}
     </div>
   );
