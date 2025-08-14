@@ -1,52 +1,106 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 export default function Home() {
-  const [image, setImage] = useState(null);
-  const [result, setResult] = useState(null);
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState("");
+  const [position, setPosition] = useState("auto");
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onloadend = () => setImage(reader.result);
-    if (file) reader.readAsDataURL(file);
+  async function toBase64(f) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result); // dataURL
+      reader.onerror = reject;
+      reader.readAsDataURL(f);
+    });
+  }
+
+  const onChange = async (e) => {
+    const f = e.target.files?.[0];
+    setFile(f || null);
+    setResult(null);
+    setError("");
+    if (f) setPreview(URL.createObjectURL(f));
+    else setPreview("");
   };
 
-  const handleSubmit = async () => {
-    if (!image) return alert('请先选择图片');
+  const onSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
+    setError("");
     setResult(null);
 
-    const res = await fetch('/api/diagnose', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: image })
-    });
+    try {
+      let image; // 可以是 dataURL/base64 或直接 URL
+      if (file) {
+        image = await toBase64(file); // data:image/png;base64,xxxx
+      } else {
+        setError("请先选择图片");
+        setLoading(false);
+        return;
+      }
 
-    const data = await res.json();
-    setResult(data);
-    setLoading(false);
+      const resp = await fetch("/api/diagnose", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // 后端会把它转成 Coze 需要的 picture 格式
+          image, 
+          position
+        })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        setError(data?.error || "服务端错误");
+      } else {
+        setResult(data);
+      }
+    } catch (err) {
+      setError(err?.message || "网络错误");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '40px', fontFamily: 'sans-serif' }}>
-      <h1>🌿 AI植物急诊室</h1>
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-      {image && <img src={image} alt="preview" style={{ maxWidth: '300px', marginTop: '20px' }} />}
-      <div>
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          style={{ marginTop: '20px', padding: '10px 20px' }}
-        >
-          {loading ? '分析中...' : '开始诊断'}
+    <main style={{ maxWidth: 720, margin: "40px auto", padding: 16 }}>
+      <h1>AI 植物诊断</h1>
+      <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
+        <input type="file" accept="image/*" onChange={onChange} />
+        <label>
+          位置（position，必填）：
+          <select value={position} onChange={(e) => setPosition(e.target.value)}>
+            <option value="auto">auto</option>
+            <option value="leaf">leaf</option>
+            <option value="stem">stem</option>
+            <option value="fruit">fruit</option>
+            <option value="root">root</option>
+          </select>
+        </label>
+        <button disabled={loading} type="submit">
+          {loading ? "诊断中…" : "开始诊断"}
         </button>
-      </div>
-      {result && (
-        <pre style={{ textAlign: 'left', marginTop: '20px', whiteSpace: 'pre-wrap' }}>
-          {JSON.stringify(result, null, 2)}
-        </pre>
+      </form>
+
+      {preview && (
+        <div style={{ marginTop: 16 }}>
+          <div>预览：</div>
+          <img src={preview} alt="preview" style={{ maxWidth: "100%", border: "1px solid #eee" }} />
+        </div>
       )}
-    </div>
+
+      {error && <pre style={{ color: "crimson", whiteSpace: "pre-wrap" }}>{error}</pre>}
+      {result && (
+        <div style={{ marginTop: 16 }}>
+          <div>返回结果：</div>
+          <pre style={{ background: "#f7f7f7", padding: 12, borderRadius: 6 }}>
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      )}
+    </main>
   );
 }
