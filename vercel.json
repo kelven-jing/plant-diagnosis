@@ -6,24 +6,26 @@
       "use": "@vercel/node"
     },
     {
-      "src": "public/**/*",
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.css",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/upload.js"
+      "dest": "/api/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "/$1"
     }
-  ],
-  "env": {
-    "IMGBB_API_KEY": "@imgbb-api-key",
-    "COZE_API_KEY": "@coze-api-key",
-    "WORKFLOW_ID": "@workflow-id",
-    "SPACE_ID": "@space-id"
-  }
+  ]
 }
