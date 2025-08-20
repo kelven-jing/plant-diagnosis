@@ -1,33 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "*.js",
-      "use": "@vercel/static"
-    }
-  ],
+  "functions": {
+    "api/upload.js": { "runtime": "nodejs16.x" },
+    "api/imgbb.js": { "runtime": "nodejs16.x" }
+  },
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
-  "env": {
-    "IMGBB_API_KEY": "@imgbb-api-key",
-    "COZE_API_KEY": "@coze-api-key",
-    "WORKFLOW_ID": "@workflow-id",
-    "SPACE_ID": "@space-id"
-  }
+    { "src": "/api/upload", "dest": "/api/upload.js" },
+    { "src": "/api/imgbb", "dest": "/api/imgbb.js" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
 }
