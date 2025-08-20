@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 植物识别（环境变量版）</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 植物识别（环境变量版）</h1>
+        
+        <div class="config-display">
+            <p><strong>空间ID:</strong> <span id="spaceIdDisplay">加载中...</span></p>
+            <p><strong>工作流ID:</strong> <span id="workflowIdDisplay">加载中...</span></p>
+        </div>
+
+        <div class="form-section">
+            <div class="input-group">
+                <label for="position">位置描述:</label>
+                <input type="text" id="position" placeholder="例如：北京海淀区公园" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="pictureFile">植物图片:</label>
+                <input type="file" id="pictureFile" accept="image/*" required>
+                <div id="preview" class="preview"></div>
+                <div id="uploadStatus" class="status"></div>
+            </div>
+            
+            <button id="submitBtn" onclick="submitWorkflow()">
+                <span id="btnText">🚀 开始识别</span>
+                <span id="btnLoading" style="display: none;">⏳ 处理中...</span>
+            </button>
+        </div>
+
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>正在处理植物识别...</p>
+        </div>
+
+        <div class="result-section" id="resultSection" style="display: none;">
+            <h2>🎯 识别结果</h2>
+            <div class="output" id="resultText"></div>
+        </div>
+
+        <div class="error-section" id="errorSection" style="display: none;">
+            <h2>❌ 错误信息</h2>
+            <div class="error" id="errorMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        // 显示配置信息
+        fetch('/api/config')
+            .then(res => res.json())
+            .then(config => {
+                document.getElementById('spaceIdDisplay').textContent = config.space_id;
+                document.getElementById('workflowIdDisplay').textContent = config.workflow_id;
+            });
+
+        // 图片预览
+        document.getElementById('pictureFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview');
+            const status = document.getElementById('uploadStatus');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="预览">`;
+                    status.textContent = `已选择: ${file.name} (${(file.size/1024).toFixed(1)}KB)`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '';
+                status.textContent = '';
+            }
+        });
+
+        async function submitWorkflow() {
+            const position = document.getElementById('position').value.trim();
+            const pictureFile = document.getElementById('pictureFile').files[0];
+            
+            if (!position || !pictureFile) {
+                alert('请填写位置并上传图片');
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const btnLoading = document.getElementById('btnLoading');
+            
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'none';
+
+            try {
+                // 上传到服务器图床
+                const formData = new FormData();
+                formData.append('image', pictureFile);
+
+                const uploadResponse = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const uploadData = await uploadResponse.json();
+                
+                if (!uploadData.url) {
+                    throw new Error('图片上传失败');
+                }
+
+                // 调用工作流
+                const workflowResponse = await fetch('/api/workflow', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        position: position,
+                        picture: uploadData.url
+                    })
+                });
+
+                const workflowData = await workflowResponse.json();
+                
+                if (workflowData.code === 0) {
+                    document.getElementById('resultText').textContent = 
+                        workflowData.data?.output || '识别完成';
+                    document.getElementById('resultSection').style.display = 'block';
+                } else {
+                    throw new Error(workflowData.msg || '工作流调用失败');
+                }
+
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('errorSection').style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
