@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>扣子空间工作流 - 图片转链接版</title>
+    <title>扣子空间工作流 - 图床版</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .input-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
         input[type="text"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
         button:hover { background: #0056b3; }
         .loading { display: none; text-align: center; padding: 20px; }
         .result { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
         .error { color: red; margin-top: 20px; }
         .preview { margin: 10px 0; }
-        .status { margin: 10px 0; font-size: 14px; color: #666; }
+        .status { margin: 10px 0; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🌿 植物识别工作流</h1>
-        <p style="color: #666;">100%保证：用户上传图片 → 自动转HTTP链接</p>
+        <p style="color: #666;">100%支持：图床API + Base64备用方案</p>
         
         <div class="input-group">
             <label>位置描述:</label>
@@ -36,6 +36,7 @@
             <div id="uploadStatus" class="status"></div>
         </div>
         
+        <button onclick="uploadToImgBB()">🖼️ 上传到图床</button>
         <button onclick="submitWorkflow()">🚀 提交识别</button>
         
         <div class="loading" id="loading">⏳ 正在处理...</div>
@@ -49,43 +50,47 @@
     <script>
         let uploadedImageUrl = null;
 
-        // 100%保证：图片选择后立即转链接
-        document.getElementById('pictureFile').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            const preview = document.getElementById('preview');
+        // 图床上传
+        async function uploadToImgBB() {
+            const file = document.getElementById('pictureFile').files[0];
             const status = document.getElementById('uploadStatus');
             
-            if (file) {
-                // 本地预览
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    preview.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; border-radius: 5px;">`;
-                };
-                reader.readAsDataURL(file);
-                
-                // 100%保证：立即转Base64链接
-                status.innerHTML = '⏳ 正在转换图片...';
-                
-                try {
-                    uploadedImageUrl = await fileToBase64(file);
-                    status.innerHTML = '✅ 图片已转换为HTTP链接格式';
-                } catch (error) {
-                    status.innerHTML = '❌ 图片转换失败';
-                }
-            } else {
-                preview.innerHTML = '';
-                uploadedImageUrl = null;
-                status.innerHTML = '';
+            if (!file) {
+                alert('请先选择图片！');
+                return;
             }
-        });
 
-        // 100%保证：Base64转HTTP链接格式
+            status.innerHTML = '⏳ 上传到图床...';
+            
+            try {
+                const base64 = await fileToBase64(file);
+                
+                const response = await fetch('/api/imgbb', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64 })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    uploadedImageUrl = data.url;
+                    status.innerHTML = `✅ 图床链接: <a href="${data.url}" target="_blank">${data.url.substring(0, 50)}...</a>`;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                status.innerHTML = '❌ 图床失败，使用Base64...';
+                uploadedImageUrl = await fileToBase64(file);
+            }
+        }
+
+        // Base64转换
         async function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => {
                     const base64 = reader.result.includes(',') ? reader.result.split(',')[1] : reader.result;
-                    // 返回Base64字符串作为HTTP链接格式
                     resolve(base64);
                 };
                 reader.onerror = () => reject(new Error('读取文件失败'));
@@ -93,7 +98,7 @@
             });
         }
 
-        // 100%保证：提交时传递HTTP链接
+        // 提交工作流
         async function submitWorkflow() {
             const position = document.getElementById('position').value.trim();
             
@@ -103,23 +108,25 @@
             }
             
             if (!uploadedImageUrl) {
-                alert('请先上传植物图片！');
-                return;
+                // 如果没有图床，使用Base64
+                const file = document.getElementById('pictureFile').files[0];
+                if (!file) {
+                    alert('请先上传图片！');
+                    return;
+                }
+                uploadedImageUrl = await fileToBase64(file);
             }
             
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
                 
-                // 100%保证：使用HTTP链接格式调用API
                 const response = await fetch('/api/upload', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         position,
-                        picture: uploadedImageUrl  // 100%保证：HTTP链接格式
+                        picture: uploadedImageUrl
                     })
                 });
                 
@@ -129,7 +136,7 @@
                     document.getElementById('resultText').textContent = data.output;
                     document.getElementById('result').style.display = 'block';
                 } else {
-                    throw new Error(data.error || '处理失败');
+                    throw new Error(data.error);
                 }
             } catch (error) {
                 document.getElementById('error').textContent = error.message;
@@ -138,6 +145,22 @@
                 document.getElementById('loading').style.display = 'none';
             }
         }
+
+        // 图片预览
+        document.getElementById('pictureFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; border-radius: 5px;">`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.innerHTML = '';
+            }
+        });
     </script>
 </body>
 </html>
