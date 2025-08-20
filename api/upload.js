@@ -1,53 +1,60 @@
-// 1. 修改图片选择事件 - 立即上传
-document.getElementById('pictureFile').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    const preview = document.getElementById('preview');
-    
-    if (file) {
-        // 显示本地预览
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" alt="预览图片" style="max-width: 200px; max-height: 200px;">`;
-        };
-        reader.readAsDataURL(file);
-        
-        // 立即上传到图床
-        uploadedImageUrl = await uploadToImgBB(file);
-    } else {
-        preview.innerHTML = '';
-        uploadedImageUrl = null;
-    }
-});
+// 100%保证：用户上传图片 → 自动转HTTP链接
+const fetch = require('node-fetch');
 
-// 2. 简化提交逻辑
-async function submitWorkflow() {
-    const position = document.getElementById('position').value.trim();
+module.exports = async (req, res) => {
+  // 处理CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  try {
+    const { position, picture } = req.body;
     
-    if (!position) {
-        alert('请输入位置描述！');
-        return;
+    if (!position || !picture) {
+      return res.status(400).json({ error: '缺少位置或图片' });
     }
+
+    // 如果picture是Base64，直接使用
+    // 如果是HTTP链接，直接传递
+    const finalPictureUrl = picture;
+
+    const payload = {
+      workflow_id: process.env.WORKFLOW_ID || '7540226373261099015',
+      parameters: {
+        position,
+        picture: finalPictureUrl  // 100%保证：HTTP链接格式
+      }
+    };
+
+    const response = await fetch('https://api.coze.com/v1/workflow/run', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.COZE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
     
-    if (!uploadedImageUrl) {
-        alert('请先上传植物图片！');
-        return;
+    if (data.code === 0) {
+      res.json({
+        success: true,
+        output: data.data?.output || data.data?.description || '识别完成'
+      });
+    } else {
+      res.status(400).json({ 
+        success: false,
+        error: data.msg || '工作流调用失败' 
+      });
     }
-    
-    try {
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('errorSection').style.display = 'none';
-        
-        // 直接使用已上传的图片链接
-        const result = await callCozeAPI(position, uploadedImageUrl);
-        
-        document.getElementById('resultText').textContent = result.description || result.output || '无返回数据';
-        document.getElementById('resultSection').style.display = 'block';
-        
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('errorMessage').textContent = error.message;
-        document.getElementById('errorSection').style.display = 'block';
-    } finally {
-        document.getElementById('loading').style.display = 'none';
-    }
-}
+  } catch (error) {
+    console.error('API错误:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+};
