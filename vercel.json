@@ -1,8 +1,12 @@
 {
   "version": 2,
   "functions": {
-    "api/upload.js": { "runtime": "nodejs16.x" },
-    "api/imgbb.js": { "runtime": "nodejs16.x" }
+    "api/upload.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/imgbb.js": {
+      "runtime": "nodejs18.x"
+    }
   },
   "routes": [
     { "src": "/api/upload", "dest": "/api/upload.js" },
