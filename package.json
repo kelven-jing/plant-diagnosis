@@ -1,8 +1,13 @@
 {
   "name": "coze-workflow-app",
   "version": "1.0.0",
-  "description": "扣子空间工作流调用器 - 无框架部署版",
+  "description": "扣子空间工作流调用器 - 图床+Base64双方案",
+  "main": "api/upload.js",
   "dependencies": {
     "node-fetch": "^3.3.1"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
   }
 }
