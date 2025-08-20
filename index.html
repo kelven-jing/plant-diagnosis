@@ -1,0 +1,114 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扣子空间工作流调用器</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .loading { display: none; text-align: center; padding: 20px; }
+        .result { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
+        .error { color: red; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌿 植物识别工作流</h1>
+        
+        <div class="input-group">
+            <label>位置描述:</label>
+            <input type="text" id="position" placeholder="例如：北京海淀区公园">
+        </div>
+        
+        <div class="input-group">
+            <label>植物图片:</label>
+            <input type="file" id="pictureFile" accept="image/*">
+            <div id="preview" style="margin-top: 10px;"></div>
+        </div>
+        
+        <button onclick="submitWorkflow()">🚀 提交识别</button>
+        
+        <div class="loading" id="loading">⏳ 正在处理...</div>
+        <div class="result" id="result" style="display: none;">
+            <h3>识别结果:</h3>
+            <div id="resultText"></div>
+        </div>
+        <div class="error" id="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function submitWorkflow() {
+            const position = document.getElementById('position').value.trim();
+            const pictureFile = document.getElementById('pictureFile').files[0];
+            
+            if (!position) {
+                alert('请输入位置描述！');
+                return;
+            }
+            
+            if (!pictureFile) {
+                alert('请上传植物图片！');
+                return;
+            }
+
+            // 转换为Base64
+            const base64 = await fileToBase64(pictureFile);
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ position, picture: base64 })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('resultText').textContent = data.output;
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    throw new Error(data.error || '处理失败');
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = error.message;
+                document.getElementById('error').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 图片预览
+        document.getElementById('pictureFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('preview').innerHTML = 
+                        `<img src="${e.target.result}" style="max-width: 200px; border-radius: 5px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
