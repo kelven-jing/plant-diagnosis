@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/upload.js",
+      "src": "api/*.js",
       "use": "@vercel/node"
     },
     {
@@ -11,10 +11,6 @@
     },
     {
       "src": "*.js",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "*.css",
       "use": "@vercel/static"
     }
   ],
@@ -27,5 +23,11 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ]
+  ],
+  "env": {
+    "IMGBB_API_KEY": "@imgbb-api-key",
+    "COZE_API_KEY": "@coze-api-key",
+    "WORKFLOW_ID": "@workflow-id",
+    "SPACE_ID": "@space-id"
+  }
 }
