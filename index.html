@@ -3,70 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌱 植物识别 - 零失败版</title>
+    <title>🌱 植物识别（前端图床版）</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
         .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #333; margin-bottom: 20px; text-align: center; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
-        button { width: 100%; padding: 15px; background: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; transition: background 0.3s; }
-        button:hover:not(:disabled) { background: #0056b3; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #007bff; color: white; cursor: pointer; border: none; }
+        button:disabled { background: #ccc; }
         .preview { max-width: 100%; margin: 10px 0; border-radius: 5px; display: none; }
-        .status { padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 14px; }
-        .loading { text-align: center; color: #007bff; }
-        .result { margin-top: 20px; padding: 20px; border-radius: 5px; background: #f8f9fa; border-left: 4px solid #007bff; }
-        .error { background: #f8d7da; color: #721c24; border-left-color: #dc3545; }
-        .success { background: #d4edda; color: #155724; border-left-color: #28a745; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; background: #f8f9fa; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌱 植物识别（零失败版）</h1>
+        <h1>🌱 植物识别（前端图床版）</h1>
         
-        <div class="form-group">
-            <label for="position">位置描述：</label>
-            <input type="text" id="position" placeholder="例如：北京植物园" required>
-        </div>
+        <input type="text" id="position" placeholder="位置描述（如：北京植物园）">
         
-        <div class="form-group">
-            <label for="pictureFile">植物图片：</label>
-            <input type="file" id="pictureFile" accept="image/*" required>
-            <img id="preview" class="preview" alt="图片预览">
-            <div id="uploadStatus" class="status" style="display: none;"></div>
-        </div>
+        <input type="file" id="pictureFile" accept="image/*">
+        <img id="preview" class="preview" alt="预览">
         
-        <button id="submitBtn" onclick="submitWorkflow()">
-            <span id="btnText">🚀 开始识别</span>
-            <span id="btnLoading" style="display: none;">⏳ 处理中...</span>
-        </button>
+        <button id="submitBtn" onclick="submitWorkflow()">开始识别</button>
         
-        <div id="loading" class="loading" style="display: none;">
-            <p>🔄 正在处理图片和调用API...</p>
-        </div>
-        
-        <div id="resultSection" class="result" style="display: none;">
-            <h3>🎯 识别结果</h3>
-            <p id="resultText"></p>
-        </div>
-        
-        <div id="errorSection" class="result error" style="display: none;">
-            <h3>❌ 错误信息</h3>
-            <p id="errorMessage"></p>
-        </div>
+        <div id="loading" style="display: none; text-align: center;">🔄 处理中...</div>
+        <div id="result" style="display: none;"></div>
     </div>
 
     <script>
         // 从app.js提取的准确配置
         const CONFIG = {
-            apiKey: 'pat_OcvqaM7quxhVPvzaTtoMYJ6MeyvQ7ZpytN6hLquNlxijXLiCBt8GvRAZ1wTqVUQf',
-            workflowId: '7540226373261099015',
-            spaceId: '7532005812232355847',
-            baseUrl: 'https://api.coze.com/v1/workflow/run',
-            imgbbKey: '03a2f7a77546075f5af407a0204953e7'
+            SPACE_ID: '7532005812232355847',
+            WORKFLOW_ID: '7540226373261099015',
+            COZE_API_KEY: 'pat_OcvqaM7quxhVPvzaTtoMYJ6MeyvQ7ZpytN6hLquNlxijXLiCBt8GvRAZ1wTqVUQf',
+            IMGBB_API_KEY: '03a2f7a77546075f5af407a0204953e7'
         };
 
         // 图片预览
@@ -90,114 +59,61 @@
             const position = document.getElementById('position').value.trim();
             const pictureFile = document.getElementById('pictureFile').files[0];
             
-            if (!position) {
-                alert('请输入位置描述！');
+            if (!position || !pictureFile) {
+                alert('请填写位置并上传图片');
                 return;
             }
-            
-            if (!pictureFile) {
-                alert('请上传植物图片！');
-                return;
-            }
-            
-            // 显示加载状态
+
+            // 显示加载
             document.getElementById('submitBtn').disabled = true;
-            document.getElementById('btnText').style.display = 'none';
-            document.getElementById('btnLoading').style.display = 'inline';
             document.getElementById('loading').style.display = 'block';
-            document.getElementById('errorSection').style.display = 'none';
-            
+            document.getElementById('result').style.display = 'none';
+
             try {
                 // 上传到图床
-                const pictureUrl = await uploadToImgBB(pictureFile);
-                
-                // 调用工作流
-                const result = await callCozeAPI(position, pictureUrl);
-                
-                document.getElementById('resultText').textContent = result.output || '识别完成';
-                document.getElementById('resultSection').style.display = 'block';
-                
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('errorMessage').textContent = error.message;
-                document.getElementById('errorSection').style.display = 'block';
-            } finally {
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('btnText').style.display = 'inline';
-                document.getElementById('btnLoading').style.display = 'none';
-                document.getElementById('loading').style.display = 'none';
-            }
-        }
-
-        async function uploadToImgBB(file) {
-            const status = document.getElementById('uploadStatus');
-            status.textContent = '⏳ 上传到图床...';
-            status.className = 'status';
-            status.style.display = 'block';
-
-            try {
                 const formData = new FormData();
-                formData.append('image', file);
+                formData.append('image', pictureFile);
 
-                const response = await fetch(`https://api.imgbb.com/1/upload?key=${CONFIG.imgbbKey}`, {
+                const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${CONFIG.IMGBB_API_KEY}`, {
                     method: 'POST',
                     body: formData
                 });
 
-                const data = await response.json();
+                const imgbbData = await imgbbResponse.json();
+                let pictureUrl = imgbbData.success ? imgbbData.data.url : URL.createObjectURL(pictureFile);
 
-                if (data.success) {
-                    status.textContent = `✅ 图床上传成功`;
-                    status.className = 'status success';
-                    return data.data.url;
-                } else {
-                    throw new Error(data.error?.message || '图床上传失败');
-                }
-                
-            } catch (error) {
-                // 备用方案：Base64
-                status.textContent = `⚠️ 图床失败，使用Base64...`;
-                status.className = 'status error';
-                
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = () => reject(new Error('读取图片失败'));
-                    reader.readAsDataURL(file);
+                // 调用工作流
+                const payload = {
+                    workflow_id: CONFIG.WORKFLOW_ID,
+                    parameters: {
+                        position: position,
+                        picture: pictureUrl
+                    }
+                };
+
+                const response = await fetch('https://api.coze.com/v1/workflow/run', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${CONFIG.COZE_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
+
+                const data = await response.json();
+                
+                document.getElementById('result').innerHTML = 
+                    `<h3>识别结果</h3><p>${data.data?.output || '识别完成'}</p>`;
+                document.getElementById('result').style.display = 'block';
+
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `<h3>错误</h3><p>${error.message}</p>`;
+                document.getElementById('result').style.display = 'block';
+            } finally {
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('loading').style.display = 'none';
             }
-        }
-
-        async function callCozeAPI(position, pictureUrl) {
-            const payload = {
-                workflow_id: CONFIG.workflowId,
-                parameters: {
-                    position: position,
-                    picture: pictureUrl
-                }
-            };
-
-            console.log('调用扣子API:', payload);
-
-            const response = await fetch(CONFIG.baseUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${CONFIG.apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-            console.log('API响应:', data);
-
-            if (data.code !== 0) {
-                throw new Error(data.msg || `API错误: ${data.code}`);
-            }
-
-            return {
-                output: data.data?.output || '植物识别完成'
-            };
         }
     </script>
 </body>
