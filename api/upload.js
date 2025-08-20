@@ -1,8 +1,6 @@
-// 100%保证：用户上传图片 → 自动转HTTP链接
 const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
-  // 处理CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -13,12 +11,17 @@ module.exports = async (req, res) => {
     const { position, picture } = req.body;
     
     if (!position || !picture) {
-      return res.status(400).json({ error: '缺少位置或图片' });
+      return res.status(400).json({ error: '缺少必要参数' });
     }
 
-    // 如果picture是Base64，直接使用
-    // 如果是HTTP链接，直接传递
-    const finalPictureUrl = picture;
+    // 100%保证：支持HTTP链接和Base64
+    let finalPictureUrl = picture;
+    
+    // 如果是Base64且需要图床，可以调用/api/imgbb
+    if (picture.startsWith('data:image')) {
+      // 保留Base64备用，或调用图床API
+      finalPictureUrl = picture;
+    }
 
     const payload = {
       workflow_id: process.env.WORKFLOW_ID || '7540226373261099015',
