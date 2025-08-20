@@ -3,164 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>扣子空间工作流 - 图床版</title>
+    <title>🌱 植物识别 - 图床版</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .input-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; }
-        button:hover { background: #0056b3; }
-        .loading { display: none; text-align: center; padding: 20px; }
-        .result { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
-        .error { color: red; margin-top: 20px; }
-        .preview { margin: 10px 0; }
-        .status { margin: 10px 0; font-size: 14px; }
+        /* 样式同上，增加图床状态显示 */
+        .upload-status {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .upload-success { background: #d4edda; color: #155724; }
+        .upload-error { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌿 植物识别工作流</h1>
-        <p style="color: #666;">100%支持：图床API + Base64备用方案</p>
+        <h1>🌱 植物识别（图床+Base64双方案）</h1>
         
-        <div class="input-group">
-            <label>位置描述:</label>
-            <input type="text" id="position" placeholder="例如：北京海淀区公园">
+        <div class="form-group">
+            <label for="position">位置描述：</label>
+            <input type="text" id="position" placeholder="例如：北京植物园">
         </div>
         
-        <div class="input-group">
-            <label>植物图片:</label>
-            <input type="file" id="pictureFile" accept="image/*">
-            <div id="preview" class="preview"></div>
-            <div id="uploadStatus" class="status"></div>
+        <div class="form-group">
+            <label for="picture">上传植物图片：</label>
+            <input type="file" id="picture" accept="image/*">
+            <img id="preview" class="preview" style="display: none;">
+            <div id="uploadStatus" class="upload-status" style="display: none;"></div>
         </div>
         
-        <button onclick="uploadToImgBB()">🖼️ 上传到图床</button>
-        <button onclick="submitWorkflow()">🚀 提交识别</button>
-        
-        <div class="loading" id="loading">⏳ 正在处理...</div>
-        <div class="result" id="result" style="display: none;">
-            <h3>识别结果:</h3>
-            <div id="resultText"></div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="useImgbb" checked> 
+                使用图床（推荐，速度更快）
+            </label>
         </div>
-        <div class="error" id="error" style="display: none;"></div>
+        
+        <button id="submitBtn" onclick="submitWorkflow()">开始识别</button>
+        
+        <div id="loading" class="loading" style="display: none;">
+            🔄 正在处理...
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
     </div>
 
     <script>
         let uploadedImageUrl = null;
+        let uploadedImageType = 'base64'; // 'base64' 或 'imgbb'
 
-        // 图床上传
-        async function uploadToImgBB() {
-            const file = document.getElementById('pictureFile').files[0];
-            const status = document.getElementById('uploadStatus');
-            
-            if (!file) {
-                alert('请先选择图片！');
-                return;
-            }
+        // 图片选择和上传
+        document.getElementById('picture').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-            status.innerHTML = '⏳ 上传到图床...';
-            
-            try {
-                const base64 = await fileToBase64(file);
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                // 显示预览
+                const preview = document.getElementById('preview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+
+                const useImgbb = document.getElementById('useImgbb').checked;
                 
+                if (useImgbb) {
+                    // 上传到图床
+                    await uploadToImgbb(e.target.result);
+                } else {
+                    // 使用Base64
+                    uploadedImageUrl = e.target.result;
+                    uploadedImageType = 'base64';
+                    showUploadStatus('使用Base64格式', 'upload-success');
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function uploadToImgbb(base64Image) {
+            const status = document.getElementById('uploadStatus');
+            status.textContent = '⏳ 上传到图床...';
+            status.className = 'upload-status';
+            status.style.display = 'block';
+
+            try {
                 const response = await fetch('/api/imgbb', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: base64 })
+                    body: JSON.stringify({ image: base64Image })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     uploadedImageUrl = data.url;
-                    status.innerHTML = `✅ 图床链接: <a href="${data.url}" target="_blank">${data.url.substring(0, 50)}...</a>`;
+                    uploadedImageType = 'imgbb';
+                    status.textContent = `✅ 图床上传成功: ${data.url.substring(0, 50)}...`;
+                    status.className = 'upload-status upload-success';
                 } else {
-                    throw new Error(data.error);
+                    // 图床失败，回退到Base64
+                    uploadedImageUrl = base64Image;
+                    uploadedImageType = 'base64';
+                    status.textContent = `⚠️ 图床失败，使用Base64: ${data.error}`;
+                    status.className = 'upload-status upload-error';
                 }
             } catch (error) {
-                status.innerHTML = '❌ 图床失败，使用Base64...';
-                uploadedImageUrl = await fileToBase64(file);
+                // 网络错误，回退到Base64
+                uploadedImageUrl = base64Image;
+                uploadedImageType = 'base64';
+                status.textContent = `⚠️ 网络错误，使用Base64: ${error.message}`;
+                status.className = 'upload-status upload-error';
             }
         }
 
-        // Base64转换
-        async function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const base64 = reader.result.includes(',') ? reader.result.split(',')[1] : reader.result;
-                    resolve(base64);
-                };
-                reader.onerror = () => reject(new Error('读取文件失败'));
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // 提交工作流
         async function submitWorkflow() {
-            const position = document.getElementById('position').value.trim();
-            
-            if (!position) {
-                alert('请输入位置描述！');
+            const position = document.getElementById('position').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+
+            if (!position || !uploadedImageUrl) {
+                showResult('请填写位置并上传图片！', 'error');
                 return;
             }
-            
-            if (!uploadedImageUrl) {
-                // 如果没有图床，使用Base64
-                const file = document.getElementById('pictureFile').files[0];
-                if (!file) {
-                    alert('请先上传图片！');
-                    return;
-                }
-                uploadedImageUrl = await fileToBase64(file);
-            }
-            
+
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
             try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
-                
+                console.log(`使用${uploadedImageType}格式调用API...`);
+
                 const response = await fetch('/api/upload', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        position,
-                        picture: uploadedImageUrl
+                        position: position,
+                        picture: uploadedImageUrl,
+                        type: uploadedImageType
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
-                    document.getElementById('resultText').textContent = data.output;
-                    document.getElementById('result').style.display = 'block';
+                    showResult(`🌱 识别结果：${data.output}`, 'success');
                 } else {
-                    throw new Error(data.error);
+                    showResult(`❌ 错误：${data.error}`, 'error');
                 }
+
             } catch (error) {
-                document.getElementById('error').textContent = error.message;
-                document.getElementById('error').style.display = 'block';
+                showResult(`🌐 网络错误：${error.message}`, 'error');
             } finally {
-                document.getElementById('loading').style.display = 'none';
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
             }
         }
 
-        // 图片预览
-        document.getElementById('pictureFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const preview = document.getElementById('preview');
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    preview.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; border-radius: 5px;">`;
-                };
-                reader.readAsDataURL(file);
-            } else {
-                preview.innerHTML = '';
-            }
-        });
+        function showResult(message, type) {
+            const result = document.getElementById('result');
+            result.innerHTML = message;
+            result.className = `result ${type}`;
+            result.style.display = 'block';
+        }
+
+        function showUploadStatus(message, className) {
+            const status = document.getElementById('uploadStatus');
+            status.textContent = message;
+            status.className = `upload-status ${className}`;
+            status.style.display = 'block';
+        }
     </script>
 </body>
 </html>
