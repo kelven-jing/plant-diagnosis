@@ -1,38 +1,30 @@
-export const config = {
-  api: {
-    bodyParser: false, // 让 Vercel 不自动处理 multipart
-  },
-};
-
-import formidable from "formidable";
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: '仅支持 POST' });
   }
 
   try {
-    const form = formidable({});
-    const [fields, files] = await form.parse(req);
-    const file = files.image[0];
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: '缺少图片数据' });
+    }
 
-    const fs = await import("fs");
-    const data = fs.readFileSync(file.filepath);
+    const apiKey = process.env.IMGBB_API_KEY;
 
-    const formData = new FormData();
-    formData.append('image', new Blob([data]));
+    const formData = new URLSearchParams();
+    formData.append("image", image);
 
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
-      method: 'POST',
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+      method: "POST",
       body: formData
     });
 
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error?.message || '图床上传失败');
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error?.message || '图床上传失败');
     }
 
-    return res.status(200).json({ url: result.data.url });
+    return res.status(200).json({ url: data.data.url });
   } catch (err) {
     console.error("upload error:", err);
     return res.status(500).json({ error: err.message });
