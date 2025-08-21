@@ -11,12 +11,10 @@ export default async function handler(req, res) {
 
     const apiKey = process.env.IMGBB_API_KEY;
 
-    const formData = new URLSearchParams();
-    formData.append("image", image);
-
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
       method: "POST",
-      body: formData
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ image })
     });
 
     const data = await response.json();
