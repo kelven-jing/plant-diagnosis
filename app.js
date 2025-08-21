@@ -1,8 +1,24 @@
+// 图片预览功能
+document.getElementById('pictureFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('preview');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML = `<img src="${e.target.result}" alt="预览图片" style="max-width: 200px; max-height: 200px;">`;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.innerHTML = '';
+    }
+});
+
 // 把文件转成 base64
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]); // 去掉前缀
+        reader.onload = () => resolve(reader.result.split(",")[1]); // 去掉 data:image/jpeg;base64,
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
@@ -25,6 +41,7 @@ async function submitWorkflow() {
     try {
         document.getElementById('loading').style.display = 'block';
         document.getElementById('errorSection').style.display = 'none';
+        document.getElementById('resultSection').style.display = 'none';
 
         // 1. 图片转 base64
         const base64Img = await fileToBase64(pictureFile);
@@ -49,7 +66,9 @@ async function submitWorkflow() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || '工作流调用失败');
 
+        // 显示结果
         document.getElementById('resultText').textContent = result.output;
+        document.getElementById('debugRaw').textContent = JSON.stringify(result.raw, null, 2);
         document.getElementById('resultSection').style.display = 'block';
 
     } catch (error) {
@@ -59,3 +78,7 @@ async function submitWorkflow() {
         document.getElementById('loading').style.display = 'none';
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('前端加载完成 - 调用后端 API 模式');
+});
