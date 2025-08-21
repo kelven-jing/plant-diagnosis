@@ -1,18 +1,12 @@
-// 图片预览功能
-document.getElementById('pictureFile').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const preview = document.getElementById('preview');
-    
-    if (file) {
+// 把文件转成 base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.innerHTML = `<img src="${e.target.result}" alt="预览图片" style="max-width: 200px; max-height: 200px;">`;
-        };
+        reader.onload = () => resolve(reader.result.split(",")[1]); // 去掉前缀
+        reader.onerror = reject;
         reader.readAsDataURL(file);
-    } else {
-        preview.innerHTML = '';
-    }
-});
+    });
+}
 
 // 提交工作流
 async function submitWorkflow() {
@@ -32,20 +26,21 @@ async function submitWorkflow() {
         document.getElementById('loading').style.display = 'block';
         document.getElementById('errorSection').style.display = 'none';
 
-        // 1. 上传图片到 Vercel API
-        const formData = new FormData();
-        formData.append('image', pictureFile);
+        // 1. 图片转 base64
+        const base64Img = await fileToBase64(pictureFile);
 
+        // 2. 上传到后端 /api/upload
         const uploadRes = await fetch('/api/upload', {
             method: 'POST',
-            body: formData
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Img })
         });
         const uploadData = await uploadRes.json();
         if (!uploadRes.ok) throw new Error(uploadData.error || '上传失败');
 
         const pictureUrl = uploadData.url;
 
-        // 2. 调用工作流 API
+        // 3. 调用工作流 API
         const response = await fetch('/api/workflow', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -64,7 +59,3 @@ async function submitWorkflow() {
         document.getElementById('loading').style.display = 'none';
     }
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('前端加载完成 - 调用后端 API 模式');
-});
