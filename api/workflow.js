@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
     const payload = {
       workflow_id: process.env.COZE_WORKFLOW_ID,
-      space_id: process.env.COZE_SPACE_ID,   // ✅ 新增
+      space_id: process.env.COZE_SPACE_ID,   // ✅ 必须带上
       parameters: {
         position,
         picture
@@ -29,8 +29,21 @@ export default async function handler(req, res) {
       throw new Error(data.msg || 'Coze 调用失败');
     }
 
-    let output = data.data?.output || data.data?.description || '无返回数据';
-    return res.status(200).json({ output });
+    // 灵活解析
+    let outputText = '无返回数据';
+    if (data.data) {
+      if (data.data.output) {
+        outputText = data.data.output;
+      } else if (data.data.description) {
+        outputText = data.data.description;
+      } else if (typeof data.data === 'string') {
+        outputText = data.data;
+      } else if (Array.isArray(data.data) && data.data.length > 0) {
+        outputText = data.data[0];
+      }
+    }
+
+    return res.status(200).json({ output: outputText, raw: data });
   } catch (err) {
     console.error("workflow error:", err);
     return res.status(500).json({ error: err.message });
