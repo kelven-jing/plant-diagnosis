@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 植物识别网站</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+        .container {
+            max-width: 500px;
+            margin: 50px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        input, button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        button:hover { background: #0056b3; }
+        .preview img { max-width: 100%; margin: 10px 0; border-radius: 10px; }
+        .result { margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 植物识别网站</h1>
+        
+        <input type="text" id="position" placeholder="📍 位置描述（如：北京植物园）">
+        
+        <input type="file" id="pictureFile" accept="image/*">
+        <div class="preview" id="preview"></div>
+        
+        <button onclick="startRecognition()">🚀 开始识别</button>
+        
+        <div id="loading" style="display: none; text-align: center; padding: 20px;">
+            ⏳ 正在识别植物...
+        </div>
+        
+        <div id="result" style="display: none;" class="result">
+            <h3>🎯 识别结果</h3>
+            <p id="resultText"></p>
+        </div>
+    </div>
+
+    <script>
+        // 图片预览
+        document.getElementById('pictureFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('preview').innerHTML = 
+                        `<img src="${e.target.result}" style="max-width: 100%; border-radius: 10px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function startRecognition() {
+            const position = document.getElementById('position').value;
+            const file = document.getElementById('pictureFile').files[0];
+            
+            if (!position || !file) {
+                alert('请填写位置并上传图片！');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+
+            try {
+                // 上传到图床
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const uploadResponse = await fetch(
+                    'https://api.imgbb.com/1/upload?key=03a2f7a77546075f5af407a0204953e7', 
+                    { method: 'POST', body: formData }
+                );
+                
+                const uploadData = await uploadResponse.json();
+                const imageUrl = uploadData.success ? uploadData.data.url : URL.createObjectURL(file);
+
+                // 调用植物识别工作流
+                const workflowResponse = await fetch('https://api.coze.com/v1/workflow/run', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer pat_OcvqaM7quxhVPvzaTtoMYJ6MeyvQ7ZpytN6hLquNlxijXLiCBt8GvRAZ1wTqVUQf',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        workflow_id: '7540226373261099015',
+                        parameters: {
+                            position: position,
+                            picture: imageUrl
+                        }
+                    })
+                });
+
+                const result = await workflowResponse.json();
+                document.getElementById('resultText').textContent = 
+                    result.data?.output || '识别完成！';
+                document.getElementById('result').style.display = 'block';
+
+            } catch (error) {
+                document.getElementById('resultText').textContent = '识别失败，请重试！';
+                document.getElementById('result').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
