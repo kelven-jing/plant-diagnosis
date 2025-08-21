@@ -8,6 +8,7 @@ export default async function handler(req, res) {
 
     const payload = {
       workflow_id: process.env.COZE_WORKFLOW_ID,
+      space_id: process.env.COZE_SPACE_ID,   // ✅ 新增
       parameters: {
         position,
         picture
