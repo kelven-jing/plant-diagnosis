@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扣子空间工作流调用器</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🌿 植物识别工作流</h1>
+        <p class="subtitle">基于扣子空间工作流7540226373261099015</p>
+        
+        <div class="form-section">
+            <h2>输入参数</h2>
+            
+            <div class="input-group">
+                <label for="position">位置描述 (position):</label>
+                <input type="text" id="position" placeholder="例如：北京海淀区公园" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="pictureFile">植物图片 (picture):</label>
+                <input type="file" id="pictureFile" accept="image/*" required>
+                <div id="preview" class="preview"></div>
+                <div id="uploadStatus" style="margin-top: 10px; font-size: 14px;"></div>
+            </div>
+            
+            <button id="submitBtn" onclick="submitWorkflow()">
+                <span id="btnText">🚀 提交到工作流</span>
+                <span id="btnLoading" style="display: none;">⏳ 处理中...</span>
+            </button>
+        </div>
+        
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>正在调用扣子空间工作流...</p>
+        </div>
+        
+        <div class="result-section" id="resultSection" style="display: none;">
+            <h2>🎯 识别结果</h2>
+            <div class="output-group">
+                <label>植物描述:</label>
+                <div class="output" id="resultText"></div>
+            </div>
+        </div>
+        
+        <div class="error-section" id="errorSection" style="display: none;">
+            <h2>❌ 错误信息</h2>
+            <div class="error" id="errorMessage"></div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
+
