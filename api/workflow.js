@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // 直接把原始响应返回给前端
+    // ✅ 直接返回完整数据给前端
     return res.status(200).json({ raw: data });
 
   } catch (err) {
