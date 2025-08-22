@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ output: outputText, raw: data });
+    return res.status(200).json({ output: outputText });
 
   } catch (err) {
     console.error("workflow error:", err);
