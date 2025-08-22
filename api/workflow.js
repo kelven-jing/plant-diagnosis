@@ -23,8 +23,25 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // ✅ 直接返回完整数据给前端
-    return res.status(200).json({ raw: data });
+    if (!response.ok || data.code !== 0) {
+      throw new Error(data.msg || 'Coze 调用失败');
+    }
+
+    let outputText = '无返回数据';
+
+    // 🚩 关键：data.data 是字符串，需要二次 JSON.parse
+    if (typeof data.data === 'string') {
+      try {
+        const inner = JSON.parse(data.data);
+        if (inner.output) {
+          outputText = inner.output;
+        }
+      } catch (e) {
+        console.warn("二次解析失败:", e);
+      }
+    }
+
+    return res.status(200).json({ output: outputText, raw: data });
 
   } catch (err) {
     console.error("workflow error:", err);
