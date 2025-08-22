@@ -25,12 +25,15 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+
     if (!response.ok || data.code !== 0) {
       throw new Error(data.msg || 'Coze 调用失败');
     }
 
-    // 灵活解析
+    // 🔍 更智能的解析逻辑
     let outputText = '无返回数据';
+
+    // 情况 1: data.data 存在
     if (data.data) {
       if (data.data.output) {
         outputText = data.data.output;
@@ -43,7 +46,13 @@ export default async function handler(req, res) {
       }
     }
 
+    // 情况 2: 有些返回直接把 output 放在根对象
+    if (data.output) {
+      outputText = data.output;
+    }
+
     return res.status(200).json({ output: outputText, raw: data });
+
   } catch (err) {
     console.error("workflow error:", err);
     return res.status(500).json({ error: err.message });
