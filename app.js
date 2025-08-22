@@ -18,7 +18,7 @@ document.getElementById('pictureFile').addEventListener('change', function(e) {
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]); // 去掉 data:image/jpeg;base64,
+        reader.onload = () => resolve(reader.result.split(",")[1]);
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
@@ -66,8 +66,8 @@ async function submitWorkflow() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || '工作流调用失败');
 
-        // 显示结果
-        document.getElementById('resultText').textContent = result.output;
+        // ✅ 调试模式：显示完整返回 JSON
+        document.getElementById('resultText').textContent = "调试中，请查看下方 JSON ⬇️";
         document.getElementById('debugRaw').textContent = JSON.stringify(result.raw, null, 2);
         document.getElementById('resultSection').style.display = 'block';
 
@@ -80,5 +80,5 @@ async function submitWorkflow() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('前端加载完成 - 调用后端 API 模式');
+    console.log('前端加载完成 - 调试模式');
 });
