@@ -68,7 +68,6 @@ async function submitWorkflow() {
 
         // ✅ 显示结果
         document.getElementById('resultText').textContent = result.output;
-        document.getElementById('debugRaw').textContent = JSON.stringify(result.raw, null, 2);
         document.getElementById('resultSection').style.display = 'block';
 
     } catch (error) {
@@ -80,5 +79,5 @@ async function submitWorkflow() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('前端加载完成');
+    console.log('前端加载完成 - 正式版');
 });
