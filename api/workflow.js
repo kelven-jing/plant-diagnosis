@@ -8,11 +8,8 @@ export default async function handler(req, res) {
 
     const payload = {
       workflow_id: process.env.COZE_WORKFLOW_ID,
-      space_id: process.env.COZE_SPACE_ID,   // ✅ 必须带上
-      parameters: {
-        position,
-        picture
-      }
+      space_id: process.env.COZE_SPACE_ID,
+      parameters: { position, picture }
     };
 
     const response = await fetch('https://api.coze.com/v1/workflow/run', {
@@ -26,32 +23,8 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    if (!response.ok || data.code !== 0) {
-      throw new Error(data.msg || 'Coze 调用失败');
-    }
-
-    // 🔍 更智能的解析逻辑
-    let outputText = '无返回数据';
-
-    // 情况 1: data.data 存在
-    if (data.data) {
-      if (data.data.output) {
-        outputText = data.data.output;
-      } else if (data.data.description) {
-        outputText = data.data.description;
-      } else if (typeof data.data === 'string') {
-        outputText = data.data;
-      } else if (Array.isArray(data.data) && data.data.length > 0) {
-        outputText = data.data[0];
-      }
-    }
-
-    // 情况 2: 有些返回直接把 output 放在根对象
-    if (data.output) {
-      outputText = data.output;
-    }
-
-    return res.status(200).json({ output: outputText, raw: data });
+    // 直接把原始响应返回给前端
+    return res.status(200).json({ raw: data });
 
   } catch (err) {
     console.error("workflow error:", err);
