@@ -66,8 +66,8 @@ async function submitWorkflow() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || '工作流调用失败');
 
-        // ✅ 调试模式：显示完整返回 JSON
-        document.getElementById('resultText').textContent = "调试中，请查看下方 JSON ⬇️";
+        // ✅ 显示结果
+        document.getElementById('resultText').textContent = result.output;
         document.getElementById('debugRaw').textContent = JSON.stringify(result.raw, null, 2);
         document.getElementById('resultSection').style.display = 'block';
 
@@ -80,5 +80,5 @@ async function submitWorkflow() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('前端加载完成 - 调试模式');
+    console.log('前端加载完成');
 });
