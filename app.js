@@ -27,28 +27,49 @@ function fileToBase64(file) {
 function renderResult(fullText) {
   const [descPart, carePart] = fullText.split('---');
 
-  // 1. 描述
-  document.getElementById('resultText').textContent = descPart.trim();
+  // 1. 描述区：自动分句换行
+  const descBox = document.getElementById('resultText');
+  descBox.innerHTML = "";
+  if (descPart) {
+    const descLines = descPart.split(/(?<=[。！!？\n])/).map(l => l.trim()).filter(l => l);
+    descLines.forEach(line => {
+      const p = document.createElement("p");
+      p.textContent = line;
+      descBox.appendChild(p);
+    });
+  }
 
-  // 2. 养护建议卡片
+  // 2. 卡片区
   const cardsContainer = document.getElementById('resultCards');
   cardsContainer.innerHTML = "";
 
   if (carePart) {
     const lines = carePart.split("\n").map(l => l.trim()).filter(l => l);
 
-    lines.forEach(line => {
-      if (/^[🌞💧🌿🍃✂️🐞🌡️🌼🍀]/.test(line)) {
-        const cleanLine = line.replace(/\*\*/g, "");
-        const [title, ...rest] = cleanLine.split("：");
-        const content = rest.join("：").trim();
+    let currentCard = null;
+    let currentContent = [];
 
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `<strong>${title}</strong>${content}`;
-        cardsContainer.appendChild(card);
+    lines.forEach(line => {
+      if (/^[🌳🍃🌱☀️🌞💧✂️🐞🌡️🍀]/.test(line)) {
+        if (currentCard) {
+          currentCard.innerHTML = `<strong>${currentCard.dataset.title}</strong><div>${currentContent.join("<br>")}</div>`;
+          cardsContainer.appendChild(currentCard);
+        }
+        const cleanLine = line.replace(/\*\*/g, "");
+        const [title, ...rest] = cleanLine.split(/[:：]/);
+        currentCard = document.createElement("div");
+        currentCard.className = "card";
+        currentCard.dataset.title = title.trim();
+        currentContent = [rest.join("：").trim()];
+      } else {
+        if (currentCard) currentContent.push(line);
       }
     });
+
+    if (currentCard) {
+      currentCard.innerHTML = `<strong>${currentCard.dataset.title}</strong><div>${currentContent.join("<br>")}</div>`;
+      cardsContainer.appendChild(currentCard);
+    }
   }
 }
 
@@ -94,10 +115,8 @@ async function submitWorkflow() {
     document.getElementById('errorSection').style.display = 'none';
     document.getElementById('resultSection').style.display = 'none';
 
-    // 1. 图片转 base64
     const base64Img = await fileToBase64(pictureFile);
 
-    // 2. 上传到 /api/upload
     const uploadRes = await fetch('/api/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -106,25 +125,4 @@ async function submitWorkflow() {
     const uploadData = await uploadRes.json();
     if (!uploadRes.ok) throw new Error(uploadData.error || '上传失败');
 
-    const pictureUrl = uploadData.url;
-
-    // 3. 调用工作流
-    const response = await fetch('/api/workflow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ position, picture: pictureUrl })
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || '工作流调用失败');
-
-    // ✅ 渲染结果
-    renderResult(result.output);
-    document.getElementById('resultSection').style.display = 'block';
-
-  } catch (error) {
-    document.getElementById('errorMessage').textContent = error.message;
-    document.getElementById('errorSection').style.display = 'block';
-  } finally {
-    document.getElementById('loading').style.display = 'none';
-  }
-}
+    co
