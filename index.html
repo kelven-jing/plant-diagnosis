@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🌿 AI植物诊断</title>
+  <title>🌿 AI植物诊断助手</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -25,7 +25,8 @@
         <div id="uploadStatus" style="margin-top: 10px; font-size: 14px;"></div>
       </div>
 
-      <button id="submitBtn" onclick="submitWorkflow()">
+      <!-- ✅ 注意这里加了 type="button" -->
+      <button type="button" id="submitBtn" onclick="submitWorkflow()">
         <span id="btnText">🚀 提交诊断</span>
         <span id="btnLoading" style="display: none;">⏳ 处理中...</span>
       </button>
@@ -42,6 +43,7 @@
         <label>植物描述:</label>
         <div class="output" id="resultText"></div>
         <div class="cards" id="resultCards"></div>
+        <!-- 📋 复制按钮 -->
         <button id="copyBtn" onclick="copyCareTips()">📋 复制养护建议</button>
       </div>
     </div>
@@ -51,6 +53,7 @@
       <div class="error" id="errorMessage"></div>
     </div>
   </div>
+  <!-- ✅ JS 放在最后，确保加载顺序正确 -->
   <script src="app.js"></script>
 </body>
 </html>
