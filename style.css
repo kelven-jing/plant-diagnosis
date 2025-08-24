@@ -89,6 +89,11 @@ button:hover {
   word-wrap: break-word;
 }
 
+.output p {
+  margin: 6px 0;
+  line-height: 1.6;
+}
+
 .cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -101,7 +106,7 @@ button:hover {
   border: 1px solid #d8e8d8;
   border-radius: 12px;
   padding: 15px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -109,8 +114,8 @@ button:hover {
 .card strong {
   display: block;
   margin-bottom: 8px;
-  font-size: 15px;
-  color: #2d6a4f;
+  font-size: 16px;
+  color: #1b4332;
 }
 
 #copyBtn {
