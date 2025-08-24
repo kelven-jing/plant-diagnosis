@@ -125,4 +125,23 @@ async function submitWorkflow() {
     const uploadData = await uploadRes.json();
     if (!uploadRes.ok) throw new Error(uploadData.error || '上传失败');
 
-    co
+    const pictureUrl = uploadData.url;
+
+    const response = await fetch('/api/workflow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ position, picture: pictureUrl })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || '工作流调用失败');
+
+    renderResult(result.output);
+    document.getElementById('resultSection').style.display = 'block';
+
+  } catch (error) {
+    document.getElementById('errorMessage').textContent = error.message;
+    document.getElementById('errorSection').style.display = 'block';
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
