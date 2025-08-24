@@ -112,3 +112,18 @@ button:hover {
   font-size: 15px;
   color: #2d6a4f;
 }
+
+#copyBtn {
+  margin-top: 15px;
+  background: #52b788;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#copyBtn:hover {
+  background: #40916c;
+}
