@@ -23,21 +23,55 @@ function fileToBase64(file) {
   });
 }
 
-// 格式化结果为卡片
-function renderCards(text) {
+// 渲染结果（描述 + 卡片）
+function renderResult(fullText) {
+  const [descPart, carePart] = fullText.split('---');
+
+  // 1. 描述
+  document.getElementById('resultText').textContent = descPart.trim();
+
+  // 2. 养护建议卡片
   const cardsContainer = document.getElementById('resultCards');
   cardsContainer.innerHTML = "";
-  const lines = text.split("\n").map(l => l.trim()).filter(l => l);
 
-  lines.forEach(line => {
-    if (line.includes("：")) {
-      const [title, ...rest] = line.split("：");
-      const content = rest.join("：");
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `<strong>${title}</strong>${content}`;
-      cardsContainer.appendChild(card);
-    }
+  if (carePart) {
+    const lines = carePart.split("\n").map(l => l.trim()).filter(l => l);
+
+    lines.forEach(line => {
+      if (/^[🌞💧🌿🍃✂️🐞🌡️🌼🍀]/.test(line)) {
+        const cleanLine = line.replace(/\*\*/g, "");
+        const [title, ...rest] = cleanLine.split("：");
+        const content = rest.join("：").trim();
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<strong>${title}</strong>${content}`;
+        cardsContainer.appendChild(card);
+      }
+    });
+  }
+}
+
+// 📋 复制按钮逻辑
+function copyCareTips() {
+  const cards = document.querySelectorAll("#resultCards .card");
+  if (cards.length === 0) {
+    alert("没有可复制的养护建议！");
+    return;
+  }
+
+  let textToCopy = "🌿 养护建议：\n\n";
+  cards.forEach(card => {
+    const title = card.querySelector("strong").innerText;
+    const content = card.innerText.replace(title, "").trim();
+    textToCopy += `${title}：${content}\n\n`;
+  });
+
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    alert("✅ 养护建议已复制到剪贴板！");
+  }).catch(err => {
+    console.error("复制失败:", err);
+    alert("❌ 复制失败，请手动选择文字复制。");
   });
 }
 
@@ -83,9 +117,8 @@ async function submitWorkflow() {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || '工作流调用失败');
 
-    // 显示结果
-    document.getElementById('resultText').textContent = result.output;
-    renderCards(result.output);
+    // ✅ 渲染结果
+    renderResult(result.output);
     document.getElementById('resultSection').style.display = 'block';
 
   } catch (error) {
