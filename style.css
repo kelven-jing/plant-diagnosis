@@ -1,69 +1,77 @@
-/* 卡片网格首页 */
-.card-grid {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-top: 40px;
-}
-
-.nav-card {
-  display: block;
-  width: 280px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  text-align: center;
-  text-decoration: none;
+/* 全局 */
+body {
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f7f5; /* 浅灰绿背景 */
   color: #333;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
 }
 
-.nav-card:hover {
-  transform: translateY(-8px) scale(1.03);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+/* 顶部标题 */
+.header {
+  text-align: center;
+  padding: 50px 20px 30px;
+  background: linear-gradient(135deg, #52b788, #74c69d);
+  color: white;
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-/* 上传表单卡片 */
-.form-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 25px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
+.header h1 {
+  margin: 0;
+  font-size: 2.2rem;
 }
 
-.form-card:hover {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.18);
+.subtitle {
+  margin-top: 10px;
+  font-size: 1rem;
+  opacity: 0.9;
 }
 
-/* 团队介绍 */
-.team-grid {
+/* 首页卡片布局 */
+.main {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-top: 30px;
+  padding: 40px 20px;
 }
 
-.team-card {
+.card-container {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* 导航卡片 */
+.nav-card {
+  width: 280px;
+  min-height: 180px;
   background: #fff;
-  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 16px;
   padding: 20px;
   text-align: center;
-  width: 200px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
   transition: all 0.3s ease;
 }
 
-.team-card:hover {
-  transform: translateY(-6px) scale(1.05);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+.nav-card h2 {
+  margin-top: 0;
+  color: #40916c;
+  font-size: 1.4rem;
 }
 
-.team-card img {
-  border-radius: 50%;
-  margin-bottom: 10px;
+.nav-card p {
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* 悬浮效果 */
+.nav-card:hover {
+  transform: translateY(-10px) scale(1.03);
+  border-color: #74c69d;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
