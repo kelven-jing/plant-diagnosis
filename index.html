@@ -1,88 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌿 AI植物诊断助手</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-  <!-- 首页 -->
-  <section id="home" class="page active">
-    <header class="header">
-      <h1>🌿 AI植物诊断助手</h1>
-      <p class="subtitle">绿色 • 简约 • 智能</p>
-    </header>
+  <div class="container">
+    <h1>🌿 AI植物诊断助手</h1>
+    <p class="subtitle">上传植物照片 + 输入位置，获取智能诊断与养护方案</p>
 
-    <main class="main">
-      <div class="card-container">
-        <div class="nav-card" onclick="showPage('upload')">
-          <h2>🪴 植物诊断</h2>
-          <p>上传植物照片 + 位置信息<br>获取专属诊断与养护方案</p>
-        </div>
-
-        <div class="nav-card" onclick="showPage('team')">
-          <h2>👨‍👩‍👧‍👦 团队介绍</h2>
-          <p>认识我们的团队<br>了解项目背后的故事与使命</p>
-        </div>
-      </div>
-    </main>
-  </section>
-
-  <!-- 上传诊断 -->
-  <section id="upload" class="page">
-    <div class="container">
-      <h1>🪴 AI植物诊断</h1>
-      <p class="subtitle">上传植物照片 + 输入位置，获取养护方案</p>
-
-      <div class="form-card">
-        <div class="input-group">
-          <label for="position">位置描述:</label>
-          <input type="text" id="position" placeholder="例如：宁波市公园">
-        </div>
-
-        <div class="input-group">
-          <label for="pictureFile">植物图片:</label>
-          <input type="file" id="pictureFile" accept="image/*">
-          <div id="preview" class="preview"></div>
-          <div id="uploadStatus"></div>
-        </div>
-
-        <button type="button" id="submitBtn" onclick="submitWorkflow()">
-          <span id="btnText">🚀 提交诊断</span>
-          <span id="btnLoading" style="display: none;">⏳ 处理中...</span>
-        </button>
+    <div class="form-section">
+      <h2>📥 输入参数</h2>
+      <div class="input-group">
+        <label for="position">位置描述:</label>
+        <input type="text" id="position" placeholder="例如：宁波市公园" required>
       </div>
 
-      <button class="back-btn" onclick="showPage('home')">⬅ 返回首页</button>
+      <div class="input-group">
+        <label for="pictureFile">植物图片:</label>
+        <input type="file" id="pictureFile" accept="image/*" required>
+        <div id="preview" class="preview"></div>
+        <div id="uploadStatus" style="margin-top: 10px; font-size: 14px;"></div>
+      </div>
+
+      <!-- ✅ 注意这里加了 type="button" -->
+      <button type="button" id="submitBtn" onclick="submitWorkflow()">
+        <span id="btnText">🚀 提交诊断</span>
+        <span id="btnLoading" style="display: none;">⏳ 处理中...</span>
+      </button>
     </div>
-  </section>
 
-  <!-- 团队介绍 -->
-  <section id="team" class="page">
-    <div class="container">
-      <h1>👨‍👩‍👧‍👦 团队介绍</h1>
-      <p class="subtitle">认识我们，了解项目背后的故事</p>
-
-      <div class="team-grid">
-        <div class="team-card">
-          <img src="https://via.placeholder.com/120" alt="成员头像">
-          <h3>张三</h3>
-          <p>项目负责人，擅长植物识别与AI应用。</p>
-        </div>
-        <div class="team-card">
-          <img src="https://via.placeholder.com/120" alt="成员头像">
-          <h3>李四</h3>
-          <p>前端开发，负责网站搭建与交互设计。</p>
-        </div>
-        <div class="team-card">
-          <img src="https://via.placeholder.com/120" alt="成员头像">
-          <h3>王五</h3>
-          <p>数据科学家，专注环境因子与植物健康分析。</p>
-        </div>
-      </div>
-
-      <button class="back-btn" onclick="showPage('home')">⬅ 返回首页</button>
+    <div class="loading" id="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>正在调用工作流...</p>
     </div>
-  </section>
 
-  <script>
-    // 页面切换
-    function showPage(pageId) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById(pageId).classList.add('active');
-    }
-  </script>
+    <div class="result-section" id="resultSection" style="display: none;">
+      <h2>🎯 诊断结果</h2>
+      <div class="output-group">
+        <label>植物描述:</label>
+        <div class="output" id="resultText"></div>
+        <div class="cards" id="resultCards"></div>
+        <!-- 📋 复制按钮 -->
+        <button id="copyBtn" onclick="copyCareTips()">📋 复制养护建议</button>
+      </div>
+    </div>
+
+    <div class="error-section" id="errorSection" style="display: none;">
+      <h2>❌ 错误信息</h2>
+      <div class="error" id="errorMessage"></div>
+    </div>
+  </div>
+  <!-- ✅ JS 放在最后，确保加载顺序正确 -->
+  <script src="app.js"></script>
 </body>
+</html>
