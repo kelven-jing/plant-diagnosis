@@ -45,33 +45,134 @@ body {
 
 /* 导航卡片 */
 .nav-card {
-  width: 280px;
-  min-height: 180px;
-  background: #fff;
-  border: 2px solid #e0e0e0;
-  border-radius: 16px;
-  padding: 20px;
+  width: 320px;              /* 长方形卡片 */
+  min-height: 200px;
+  background: linear-gradient(135deg, #f8fff8, #eaf7ea); /* 淡绿背景 */
+  border: 2px solid #d9e6dc;
+  border-radius: 20px;
+  padding: 25px;
   text-align: center;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
+
+  /* 阴影 & 动画 */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.35s ease;
 }
 
 .nav-card h2 {
   margin-top: 0;
-  color: #40916c;
-  font-size: 1.4rem;
+  color: #2d6a4f;           /* 深绿标题 */
+  font-size: 1.5rem;
 }
 
 .nav-card p {
-  color: #555;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  color: #444;              /* 深灰文字 */
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 /* 悬浮效果 */
 .nav-card:hover {
-  transform: translateY(-10px) scale(1.03);
-  border-color: #74c69d;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  transform: translateY(-10px) scale(1.05);
+  border-color: #74c69d; 
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2); /* 底部灰色模糊阴影 */
+}
+
+/* 上传表单卡片 */
+.form-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+.form-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.18);
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 6px;
+  color: #2d6a4f;
+}
+
+input[type="text"], input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+/* 提交按钮 */
+button {
+  background: #52b788;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: #40916c;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* 上传图片预览 */
+.preview img {
+  max-width: 100%;
+  margin-top: 10px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+/* 结果 & 错误区域 */
+.result-section, .error-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* 团队介绍 */
+.team-grid {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+
+.team-card {
+  background: linear-gradient(135deg, #ffffff, #f0f7f2);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  width: 200px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+}
+
+.team-card img {
+  border-radius: 50%;
+  margin-bottom: 10px;
 }
