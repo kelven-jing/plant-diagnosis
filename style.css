@@ -202,4 +202,31 @@ button:hover {
   background: #aaa;
   transform: scale(1.05);
 }
+/* 页面模块隐藏/显示 */
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+/* 返回按钮 */
+.back-btn {
+  margin-top: 20px;
+  background: #ccc;
+  color: #333;
+  border: none;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background: #aaa;
+  transform: scale(1.05);
+}
+
 
