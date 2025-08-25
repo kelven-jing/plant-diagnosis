@@ -1,147 +1,63 @@
-// 图片预览
-document.getElementById('pictureFile').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  const preview = document.getElementById('preview');
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      preview.innerHTML = `<img src="${e.target.result}" alt="预览图片" style="max-width: 200px; max-height: 200px;">`;
-    };
-    reader.readAsDataURL(file);
-  } else {
-    preview.innerHTML = '';
-  }
-});
-
-// base64 转换
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// 渲染结果（描述 + 卡片）
-function renderResult(fullText) {
-  const [descPart, carePart] = fullText.split('---');
-
-  // 1. 描述区：自动分句换行
-  const descBox = document.getElementById('resultText');
-  descBox.innerHTML = "";
-  if (descPart) {
-    const descLines = descPart.split(/(?<=[。！!？\n])/).map(l => l.trim()).filter(l => l);
-    descLines.forEach(line => {
-      const p = document.createElement("p");
-      p.textContent = line;
-      descBox.appendChild(p);
-    });
-  }
-
-  // 2. 卡片区
-  const cardsContainer = document.getElementById('resultCards');
-  cardsContainer.innerHTML = "";
-
-  if (carePart) {
-    const lines = carePart.split("\n").map(l => l.trim()).filter(l => l);
-
-    let currentCard = null;
-    let currentContent = [];
-
-    lines.forEach(line => {
-      if (/^[🌳🍃🌱☀️🌞💧✂️🐞🌡️🍀]/.test(line)) {
-        if (currentCard) {
-          currentCard.innerHTML = `<strong>${currentCard.dataset.title}</strong><div>${currentContent.join("<br>")}</div>`;
-          cardsContainer.appendChild(currentCard);
-        }
-        const cleanLine = line.replace(/\*\*/g, "");
-        const [title, ...rest] = cleanLine.split(/[:：]/);
-        currentCard = document.createElement("div");
-        currentCard.className = "card";
-        currentCard.dataset.title = title.trim();
-        currentContent = [rest.join("：").trim()];
-      } else {
-        if (currentCard) currentContent.push(line);
-      }
-    });
-
-    if (currentCard) {
-      currentCard.innerHTML = `<strong>${currentCard.dataset.title}</strong><div>${currentContent.join("<br>")}</div>`;
-      cardsContainer.appendChild(currentCard);
-    }
-  }
-}
-
-// 📋 复制按钮逻辑
-function copyCareTips() {
-  const cards = document.querySelectorAll("#resultCards .card");
-  if (cards.length === 0) {
-    alert("没有可复制的养护建议！");
-    return;
-  }
-
-  let textToCopy = "🌿 养护建议：\n\n";
-  cards.forEach(card => {
-    const title = card.querySelector("strong").innerText;
-    const content = card.innerText.replace(title, "").trim();
-    textToCopy += `${title}：${content}\n\n`;
-  });
-
-  navigator.clipboard.writeText(textToCopy).then(() => {
-    alert("✅ 养护建议已复制到剪贴板！");
-  }).catch(err => {
-    console.error("复制失败:", err);
-    alert("❌ 复制失败，请手动选择文字复制。");
-  });
-}
-
-// 提交工作流
 async function submitWorkflow() {
   const position = document.getElementById('position').value.trim();
-  const pictureFile = document.getElementById('pictureFile').files[0];
-  
-  if (!position) {
-    alert('请输入位置描述！');
+  const fileInput = document.getElementById('pictureFile');
+  const errorSection = document.getElementById('errorSection');
+  const errorMessage = document.getElementById('errorMessage');
+  const resultSection = document.getElementById('resultSection');
+  const resultText = document.getElementById('resultText');
+
+  errorSection.style.display = 'none';
+  resultSection.style.display = 'none';
+
+  if (!position || fileInput.files.length === 0) {
+    errorMessage.textContent = "请填写位置信息并上传图片。";
+    errorSection.style.display = 'block';
     return;
   }
-  if (!pictureFile) {
-    alert('请上传植物图片！');
-    return;
-  }
+
+  // 上传图片（用 base64 简化）
+  const file = fileInput.files[0];
+  const base64 = await toBase64(file);
+
+  document.getElementById('btnText').style.display = 'none';
+  document.getElementById('btnLoading').style.display = 'inline';
 
   try {
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('errorSection').style.display = 'none';
-    document.getElementById('resultSection').style.display = 'none';
-
-    const base64Img = await fileToBase64(pictureFile);
-
-    const uploadRes = await fetch('/api/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: base64Img })
-    });
-    const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) throw new Error(uploadData.error || '上传失败');
-
-    const pictureUrl = uploadData.url;
-
     const response = await fetch('/api/workflow', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ position, picture: pictureUrl })
+      body: JSON.stringify({ picture: base64, position })
     });
+
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || '工作流调用失败');
 
-    renderResult(result.output);
-    document.getElementById('resultSection').style.display = 'block';
+    if (!response.ok || result.error) {
+      let uiText = result.message || '请求失败，请稍后再试。';
+      if (result.error === 'COZE_TOKEN_DEPLETED') {
+        uiText = '⚠️ 服务额度已用尽，我们正在补充 AI 服务，请稍后再试。';
+      }
+      errorMessage.textContent = uiText;
+      errorSection.style.display = 'block';
+      return;
+    }
 
-  } catch (error) {
-    document.getElementById('errorMessage').textContent = error.message;
-    document.getElementById('errorSection').style.display = 'block';
+    resultText.textContent = result.output || "（无结果）";
+    resultSection.style.display = 'block';
+  } catch (err) {
+    errorMessage.textContent = "请求出错：" + err.message;
+    errorSection.style.display = 'block';
   } finally {
-    document.getElementById('loading').style.display = 'none';
+    document.getElementById('btnText').style.display = 'inline';
+    document.getElementById('btnLoading').style.display = 'none';
   }
+}
+
+// 图片转 base64
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
