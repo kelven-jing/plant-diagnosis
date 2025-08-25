@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>植物诊断 - AI植物助手</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🪴 AI植物诊断</h1>
+    <p class="subtitle">上传植物照片 + 输入位置，获取养护方案</p>
+
+    <div class="form-card">
+      <div class="input-group">
+        <label for="position">位置描述:</label>
+        <input type="text" id="position" placeholder="例如：宁波市公园">
+      </div>
+
+      <div class="input-group">
+        <label for="pictureFile">植物图片:</label>
+        <input type="file" id="pictureFile" accept="image/*">
+        <div id="preview" class="preview"></div>
+        <div id="uploadStatus"></div>
+      </div>
+
+      <button type="button" id="submitBtn" onclick="submitWorkflow()">
+        <span id="btnText">🚀 提交诊断</span>
+        <span id="btnLoading" style="display: none;">⏳ 处理中...</span>
+      </button>
+    </div>
+
+    <div class="loading" id="loading" style="display:none;">
+      <div class="spinner"></div>
+      <p>正在调用工作流...</p>
+    </div>
+
+    <div class="result-section" id="resultSection" style="display:none;">
+      <h2>🎯 诊断结果</h2>
+      <div class="output" id="resultText"></div>
+      <div class="cards" id="resultCards"></div>
+      <button id="copyBtn" onclick="copyCareTips()">📋 复制养护建议</button>
+    </div>
+
+    <div class="error-section" id="errorSection" style="display:none;">
+      <h2>❌ 错误信息</h2>
+      <div class="error" id="errorMessage"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
