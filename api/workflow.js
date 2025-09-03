@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const cozeResp = await fetch("https://api.coze.com/open_api/v2/workflow/execute", {
+    const cozeResp = await fetch("https://api.coze.cn/open_api/v2/workflow/execute", {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${COZE_API_KEY}`,
