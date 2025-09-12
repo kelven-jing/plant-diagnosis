@@ -1,30 +1,48 @@
+export const config = {
+  api: { bodyParser: false } // 关闭默认解析，自己处理 FormData
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: '仅支持 POST' });
+    return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
   }
 
+  const token = process.env.GITHUB_TOKEN;
+  const repo = process.env.GITHUB_REPO; // e.g. "yourname/plant-images"
+  const pathPrefix = process.env.GITHUB_PATH || "images";
+
   try {
-    const { image } = req.body;
-    if (!image) {
-      return res.status(400).json({ error: '缺少图片数据' });
-    }
+    const chunks = [];
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", async () => {
+      const buffer = Buffer.concat(chunks);
 
-    const apiKey = process.env.IMGBB_API_KEY;
+      // 简化处理: 假设上传的就是 PNG
+      const base64Content = buffer.toString("base64");
+      const fileName = `plant_${Date.now()}.png`;
 
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ image })
+      const githubUrl = `https://api.github.com/repos/${repo}/contents/${pathPrefix}/${fileName}`;
+
+      const ghRes = await fetch(githubUrl, {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: `upload ${fileName}`,
+          content: base64Content,
+        }),
+      });
+
+      const ghData = await ghRes.json();
+      if (!ghRes.ok) return res.status(500).json({ error: ghData.message });
+
+      const rawUrl = `https://raw.githubusercontent.com/${repo}/main/${pathPrefix}/${fileName}`;
+      return res.status(200).json({ url: rawUrl });
     });
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error?.message || '图床上传失败');
-    }
-
-    return res.status(200).json({ url: data.data.url });
   } catch (err) {
-    console.error("upload error:", err);
     return res.status(500).json({ error: err.message });
   }
 }
