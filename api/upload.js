@@ -1,48 +1,39 @@
-export const config = {
-  api: { bodyParser: false } // 关闭默认解析，自己处理 FormData
-};
-
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const token = process.env.GITHUB_TOKEN;
-  const repo = process.env.GITHUB_REPO; // e.g. "yourname/plant-images"
-  const pathPrefix = process.env.GITHUB_PATH || "images";
+  const { imageBase64, fileName } = req.body;
+  if (!imageBase64 || !fileName) {
+    return res.status(400).json({ error: "缺少必要参数" });
+  }
 
   try {
-    const chunks = [];
-    req.on("data", (c) => chunks.push(c));
-    req.on("end", async () => {
-      const buffer = Buffer.concat(chunks);
-
-      // 简化处理: 假设上传的就是 PNG
-      const base64Content = buffer.toString("base64");
-      const fileName = `plant_${Date.now()}.png`;
-
-      const githubUrl = `https://api.github.com/repos/${repo}/contents/${pathPrefix}/${fileName}`;
-
-      const ghRes = await fetch(githubUrl, {
+    const response = await fetch(
+      `https://api.github.com/repos/${process.env.GITHUB_OWNER}/${process.env.GITHUB_REPO}/contents/uploads/${fileName}`,
+      {
         method: "PUT",
         headers: {
-          Authorization: `token ${token}`,
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: `upload ${fileName}`,
-          content: base64Content,
+          message: `Upload ${fileName}`,
+          content: imageBase64.replace(/^data:image\/\w+;base64,/, ""),
+          branch: process.env.GITHUB_BRANCH,
         }),
-      });
+      }
+    );
 
-      const ghData = await ghRes.json();
-      if (!ghRes.ok) return res.status(500).json({ error: ghData.message });
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(500).json({ error: data.message || "GitHub 上传失败" });
+    }
 
-      const rawUrl = `https://raw.githubusercontent.com/${repo}/main/${pathPrefix}/${fileName}`;
-      return res.status(200).json({ url: rawUrl });
+    return res.status(200).json({
+      url: data.content.download_url,
     });
-
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 }
