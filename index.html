@@ -1,26 +1,98 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>AI 植物医生</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI植物医生 - 智能植物识别</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>🌿 AI 植物医生</h1>
-  <form id="plantForm">
-    <input type="text" id="position" placeholder="请输入城市" required>
-    <input type="file" id="pictureFile" accept="image/*" required>
-    <button type="submit">提交诊断</button>
-  </form>
+    <div class="hero-section">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">AI植物医生</h1>
+                <p class="hero-subtitle">智能识别 · 精准诊断 · 专业建议</p>
+            </div>
+        </div>
+    </div>
 
-  <div id="loading" style="display:none">⏳ 正在分析...</div>
-  <div id="errorSection" style="display:none;color:red">
-    ❌ <span id="errorMessage"></span>
-  </div>
-  <div id="resultSection" style="display:none">
-    ✅ 诊断结果：<p id="resultText"></p>
-  </div>
+    <main class="main-content">
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h2>植物智能识别</h2>
+                    <p>上传植物图片，获取专业诊断结果</p>
+                </div>
+                
+                <form class="form-container" onsubmit="event.preventDefault(); submitWorkflow();">
+                    <div class="input-group">
+                        <label for="picture">植物图片URL</label>
+                        <input type="url" 
+                               id="picture" 
+                               placeholder="粘贴图片网址，如：https://example.com/plant.jpg"
+                               required>
+                        <small class="hint">支持互联网图片URL</small>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="position">所在城市</label>
+                        <input type="text" 
+                               id="position" 
+                               placeholder="例：北京、上海、广州、深圳"
+                               required>
+                        <small class="hint">输入您当前所在的城市名称</small>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">开始识别</span>
+                        <div class="btn-loader" style="display: none;">
+                            <div class="spinner"></div>
+                        </div>
+                    </button>
+                </form>
+                
+                <div id="loading" class="loading-section" style="display: none;">
+                    <div class="loading-animation">
+                        <div class="pulse-ring"></div>
+                        <div class="pulse-ring"></div>
+                        <div class="pulse-ring"></div>
+                    </div>
+                    <p class="loading-text">AI正在分析植物特征...</p>
+                </div>
+                
+                <div id="errorSection" class="error-section" style="display: none;">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-message" id="errorMessage"></div>
+                </div>
+                
+                <div id="resultSection" class="result-section" style="display: none;">
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h3>🌱 诊断结果</h3>
+                            <div class="result-time" id="resultTime"></div>
+                        </div>
+                        <div class="result-content">
+                            <div class="plant-image">
+                                <img id="resultImage" alt="识别图片">
+                            </div>
+                            <div class="plant-info">
+                                <div class="info-item">
+                                    <span class="info-label">所在城市：</span>
+                                    <span class="info-value" id="resultPosition"></span>
+                                </div>
+                            </div>
+                            <div class="plant-advice">
+                                <h4>🌿 专业建议</h4>
+                                <div class="advice-content" id="resultOutput"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
